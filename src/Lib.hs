@@ -1,45 +1,60 @@
-module Lib
-    ( someFunc
-    ) where
+{-# LANGUAGE TemplateHaskell #-}
 
+module Lib where
+
+import Prelude as P
+import Data.Either (isLeft)
+import Control.Lens
 import Control.Monad.Writer
 import Control.Monad.Reader
 import Control.Monad.Except
 import Control.Monad.Loops (iterateUntilM)
-import Data.Either (isLeft)
-import Prelude as P
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
 
-{--# Plan
-
-Player = the programmable player (handler), contains id, postion and action
-
-Enemy = contains id, position and action
-
-#--}
-
 
 -- Types
-data Position = Pos Int Int
+data Pos = Pos { _x :: Int
+               , _y :: Int
+               } deriving Eq
 
-data Direction = Left | Right | Up | Down
+data Dir = Left | Up | Right | Down
+  deriving (Eq, Ord, Enum, Bounded)
 
-data Entity = Entity { life :: Integer
-                     , pos :: Position
-                     , dir :: Direction
+
+data Variant = Spinner Dir | Walker Pos Pos
+
+data Entity = Entity { _life :: Integer
+                     , _pos :: Pos
+                     , _dir :: Dir
                      }
 
-data Event = ChangeDir Entity Direction
-           | Move Entity Direction
-           | Shoot Entity Direction
+instance Eq Entity where
+  e1 == e2 = _pos e1 == _pos e2
 
-data Config = Config { obstacles :: [Position]
-                     , enemies :: [Entity]
-                     , player :: Entity
+data Enemy = Enemy { _entity :: Entity
+                   , _variant :: Variant
+                   } 
+
+instance Eq Enemy where
+  e1 == e2 = _entity e1 == _entity e2
+
+data Config = Config { _obstacles :: [Pos]
+                     , _enemies :: [Enemy]
+                     , _player :: Entity
+                     , _dim :: Pos
                      }
+
+data Event = ChangeDir Entity Dir
+           | Move Entity Dir
+           | Shoot Entity Dir
+
+makeLenses ''Pos
+makeLenses ''Entity
+makeLenses ''Config
+
 
 
 -- Combinators
@@ -48,8 +63,11 @@ type Step m a = ReaderT Config (WriterT [Event] m) a
 config :: Monad m => Step m Config
 config = ask
 
-push :: Monad m => Event -> Step m ()
-push evt = tell [evt]
+emit :: Monad m => Event -> Step m ()
+emit evt = tell [evt]
+
+env :: Monad m => Enemy -> Step m Config
+env e = config >>= return . over enemies (delete e)
 
 runStep :: Monad m => Step m a -> Config -> m (a, [Event])
 runStep step = runWriterT . runReaderT step
@@ -64,14 +82,40 @@ ended :: Config -> Bool
 ended conf = undefined
 
 runGame :: Monad m => Step m Config -> Config -> m Config
-runGame step conf =
-  iterateUntilM ended ((=<<) (uncurry merge) . runStep step) conf
+runGame step init =
+  iterateUntilM ended (\c -> runStep step c >>= uncurry merge) init
    
--- runGame step c = do
-  -- e <- runStep step c
-  -- case e of
-    -- P.Left end -> return end
 
 
+
+-- Util
+delete :: Eq a => a -> [a] -> [a]
+delete deleted xs = [ x | x <- xs, x /= deleted ]
+
+
+
+
+-- Exemple Prog
+computer :: Monad m => Step m ()
+computer = config >>= mapM_ (\e -> act e) . _enemies
+
+act :: Monad m => Enemy -> Step m ()
+act e = do
+  c <- env e
+  case _variant e of
+    Spinner d -> emit $ spin d (_entity e) c
+    Walker a b -> emit $ walk a b (_entity e) c
+
+spin :: Dir -> Entity -> Config -> Event
+spin d e c = ChangeDir e (succ d)
+
+walk :: Pos -> Pos -> Entity -> Config -> Event
+walk a b e c = undefined 
+  
+
+-- Prog
+prog :: IO ()
+prog = void $ runGame (computer >> config) initConf
+  where initConf = undefined
 
 
