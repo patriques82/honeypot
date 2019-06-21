@@ -7,15 +7,13 @@ import Data.Either (isLeft)
 import Control.Lens
 import Control.Monad.Writer
 import Control.Monad.Reader
-import Control.Monad.Except
-import Control.Monad.Loops (iterateUntilM)
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
 
 
--- Types
+-- Data
 data Pos = Pos { _x :: Int
                , _y :: Int
                } deriving Eq
@@ -75,16 +73,16 @@ runStep step = runWriterT . runReaderT step
 
 
 -- Run
-merge :: Monad m => Config -> [Event] -> m Config
+merge :: Config -> [Event] -> Config
 merge conf evs = undefined
 
 ended :: Config -> Bool
 ended conf = undefined
 
-runGame :: Monad m => Step m Config -> Config -> m Config
-runGame step init =
-  iterateUntilM ended (\c -> runStep step c >>= uncurry merge) init
-   
+runGame :: Monad m => Step m a -> Config -> m ()
+runGame step = iterateUntilM ended exec
+  where exec c = runStep (step >> config) c >>= return . uncurry merge
+
 
 
 
@@ -92,12 +90,17 @@ runGame step init =
 delete :: Eq a => a -> [a] -> [a]
 delete deleted xs = [ x | x <- xs, x /= deleted ]
 
+iterateUntilM :: Monad m => (a -> Bool) -> (a -> m a) -> a -> m ()
+iterateUntilM p f v
+  | p v       = return ()
+  | otherwise = f v >>= iterateUntilM p f
+
 
 
 
 -- Exemple Prog
-computer :: Monad m => Step m ()
-computer = config >>= mapM_ (\e -> act e) . _enemies
+computerStep :: Monad m => Step m ()
+computerStep = config >>= mapM_ act . _enemies
 
 act :: Monad m => Enemy -> Step m ()
 act e = do
@@ -110,12 +113,12 @@ spin :: Dir -> Entity -> Config -> Event
 spin d e c = ChangeDir e (succ d)
 
 walk :: Pos -> Pos -> Entity -> Config -> Event
-walk a b e c = undefined 
+walk a b e c = undefined
   
 
 -- Prog
 prog :: IO ()
-prog = void $ runGame (computer >> config) initConf
+prog = runGame computerStep initConf
   where initConf = undefined
 
 
