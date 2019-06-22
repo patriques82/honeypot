@@ -24,6 +24,7 @@ dependencies:
 - mtl
 - monad-loops
 - lens
+- gloss
 
 library:
   source-dirs: src
@@ -33,11 +34,13 @@ executables:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
+    - -O2
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
     - honeypot
+    - gloss
 
 tests:
   honeypot-test:
