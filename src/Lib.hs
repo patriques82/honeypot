@@ -5,8 +5,10 @@ module Lib where
 import Prelude as P
 import Data.Either (isLeft)
 import Control.Lens
+import Control.Monad
 import Control.Monad.Writer
 import Control.Monad.Reader
+
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
@@ -54,35 +56,31 @@ makeLenses ''Entity
 makeLenses ''Config
 
 
-
--- Combinators
-type Step m a = ReaderT Config (WriterT [Event] m) a
-
-config :: Monad m => Step m Config
-config = ask
-
-emit :: Monad m => Event -> Step m ()
-emit evt = tell [evt]
-
-env :: Monad m => Enemy -> Step m Config
-env e = config >>= return . over enemies (delete e)
-
-runStep :: Monad m => Step m a -> Config -> m (a, [Event])
-runStep step = runWriterT . runReaderT step
-
-
-
--- Run
+-- Merge config with events to create new config
 merge :: Config -> [Event] -> Config
 merge conf evs = undefined
 
-ended :: Config -> Bool
-ended conf = undefined
+-- Combinators
+type StepT m a = ReaderT Config (WriterT [Event] m) a
 
-runGame :: Monad m => Step m a -> Config -> m ()
-runGame step = iterateUntilM ended exec
-  where exec c = runStep (step >> config) c >>= return . uncurry merge
+type Step a = StepT Identity a
 
+config :: Monad m => StepT m Config
+config = ask
+
+emit :: Monad m => Event -> StepT m ()
+emit evt = tell [evt]
+
+-- ??? Should this be a typeclass for Enemy and Player to instantiate?
+env :: Monad m => Enemy -> StepT m Config
+env e = config >>= return . over enemies (delete e)
+
+--                     step         pre config      post config
+runStepT :: Monad m => StepT m a -> Config -> m (a, Config)
+runStepT step c = fmap (fmap (merge c)) $ runWriterT $ runReaderT step c
+
+runStep :: Step a -> Config -> (a, Config)
+runStep step = runIdentity . runStepT step
 
 
 
@@ -97,12 +95,22 @@ iterateUntilM p f v
 
 
 
+-- Run
+ended :: Config -> Bool
+ended conf = undefined
+
+runGame :: Monad m => StepT m a -> Config -> m ()
+runGame step = iterateUntilM ended exec
+  where exec c = liftM snd $ runStepT (step >> config) c
+
+
+
 
 -- Exemple Prog
-computerStep :: Monad m => Step m ()
+computerStep :: Monad m => StepT m ()
 computerStep = config >>= mapM_ act . _enemies
 
-act :: Monad m => Enemy -> Step m ()
+act :: Monad m => Enemy -> StepT m ()
 act e = do
   c <- env e
   case _variant e of

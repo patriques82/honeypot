@@ -1,9 +1,8 @@
 import Graphics.Gloss
+import Graphics.Gloss.Data.ViewPort
 
+import Lib
 
-
-
-data Model = M (Float, Float)
 
 width, height, offset :: Int
 width = 300
@@ -11,7 +10,7 @@ height = 300
 offset = 100
 
 window :: Display
-window = InWindow "Pong" (width, height) (offset, offset)
+window = InWindow "Honeypot" (width, height) (offset, offset)
 
 
 main :: IO ()
@@ -19,19 +18,18 @@ main = simulate
   window
   white
   simulationRate
-  initialModel
-  drawingFunc
-  updateFunc
+  initConfig
+  draw
+  update
   where
     simulationRate :: Int
     simulationRate = 20
 
-    initialModel :: Model
-    initialModel = M (0,0)
+    initConfig :: Config
+    initConfig = undefined
 
-    drawingFunc :: Model -> Picture
-    drawingFunc (M (theta, dtheta)) = Line [(0, 0), (50 * cos theta, 50 * sin theta)]
+    draw :: Config -> Picture
+    draw c = undefined
 
-
-  --    updateFunc :: ViewPort -> Float -> Model -> Model
-    updateFunc _ dt (M (theta, dtheta)) = M (theta + dt * dtheta, dtheta - dt * (cos theta))
+    update :: ViewPort -> Float -> Config -> Config
+    update _ dt = snd . runStep computerStep
