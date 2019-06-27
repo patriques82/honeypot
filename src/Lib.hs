@@ -3,7 +3,9 @@
 module Lib where
 
 import Prelude as P
+import Data.Foldable (foldl')
 import Data.Either (isLeft)
+import Data.List (sort)
 import Control.Lens
 import Control.Monad
 import Control.Monad.Writer
@@ -18,11 +20,10 @@ someFunc = putStrLn "someFunc"
 -- Data
 data Pos = Pos { _x :: Int
                , _y :: Int
-               } deriving Eq
+               } deriving (Eq, Ord)
 
 data Dir = Left | Up | Right | Down
   deriving (Eq, Ord, Enum, Bounded)
-
 
 data Variant = Spinner Dir | Walker Pos Pos
 
@@ -33,6 +34,9 @@ data Entity = Entity { _life :: Integer
 
 instance Eq Entity where
   e1 == e2 = _pos e1 == _pos e2
+
+instance Ord Entity where
+  e1 <= e2 = _pos e1 <= _pos e2
 
 data Enemy = Enemy { _entity :: Entity
                    , _variant :: Variant
@@ -50,17 +54,26 @@ data Config = Config { _obstacles :: [Pos]
 data Event = ChangeDir Entity Dir
            | Move Entity Dir
            | Shoot Entity Dir
+  deriving (Eq, Ord)
 
 makeLenses ''Pos
 makeLenses ''Entity
 makeLenses ''Config
 
 
+
 -- Merge config with events to create new config
 merge :: Config -> [Event] -> Config
-merge conf evs = undefined
+merge c = foldl' f c . sort
+  where f c' (ChangeDir e d) = undefined
+        f c' (Move e d) = undefined
+        f c' (Shoot e d) = undefined
 
 -- Combinators
+
+-- Similar to a State Monad with the difference that the state change is withheld
+-- until the total step is runned so that intermediate steps doesnt know the
+-- state changes that are occuring during the execution of the total step.
 type StepT m a = ReaderT Config (WriterT [Event] m) a
 
 type Step a = StepT Identity a
@@ -105,7 +118,6 @@ runGame step = iterateUntilM ended exec
 
 
 
-
 -- Exemple Prog
 computerStep :: Monad m => StepT m ()
 computerStep = config >>= mapM_ act . _enemies
@@ -123,6 +135,7 @@ spin d e c = ChangeDir e (succ d)
 walk :: Pos -> Pos -> Entity -> Config -> Event
 walk a b e c = undefined
   
+
 
 -- Prog
 prog :: IO ()
