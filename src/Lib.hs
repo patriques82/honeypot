@@ -1,4 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 
 module Lib where
 
@@ -6,6 +8,7 @@ import Prelude as P
 import Data.Foldable (foldl')
 import Data.Either (isLeft)
 import Data.List (sort)
+import qualified Data.Map as M
 import Control.Lens
 import Control.Monad
 import Control.Monad.Writer
@@ -25,82 +28,57 @@ data Pos = Pos { _x :: Int
 data Dir = Left | Up | Right | Down
   deriving (Eq, Ord, Enum, Bounded)
 
-data Variant = Spinner Dir | Walker Pos Pos
+data Variant = Spinner Dir 
+             | Walker Pos Pos
+  deriving Eq
 
-data Entity = Entity { _life :: Integer
-                     , _pos :: Pos
-                     , _dir :: Dir
-                     }
-
-instance Eq Entity where
-  e1 == e2 = _pos e1 == _pos e2
-
-instance Ord Entity where
-  e1 <= e2 = _pos e1 <= _pos e2
-
-data Enemy = Enemy { _entity :: Entity
+data Enemy = Enemy { _eLife :: Integer
+                   , _eDir :: Dir
                    , _variant :: Variant
-                   } 
+                   } deriving Eq
 
-instance Eq Enemy where
-  e1 == e2 = _entity e1 == _entity e2
-
-data Config = Config { _obstacles :: [Pos]
-                     , _enemies :: [Enemy]
-                     , _player :: Entity
-                     , _dim :: Pos
+data Player = Player { _pLife :: Integer
+                     , _pDir :: Dir
                      }
 
-data Event = ChangeDir Entity Dir
-           | Move Entity Dir
-           | Shoot Entity Dir
+data Environment = Env { _obstacles :: [Pos]
+                       , _enemies :: M.Map Pos Enemy
+                       , _player :: (Pos, Player)
+                       , _dim :: Pos
+                       }
+
+data Event = ChangeDir Pos Dir
+           | Move Pos Dir
+           | Shoot Pos
   deriving (Eq, Ord)
 
 makeLenses ''Pos
-makeLenses ''Entity
-makeLenses ''Config
+makeLenses ''Enemy
+makeLenses ''Environment
 
-
-
--- Merge config with events to create new config
-merge :: Config -> [Event] -> Config
-merge c = foldl' f c . sort
-  where f c' (ChangeDir e d) = undefined
-        f c' (Move e d) = undefined
-        f c' (Shoot e d) = undefined
 
 -- Combinators
 
 -- Similar to a State Monad with the difference that the state change is withheld
 -- until the total step is runned so that intermediate steps doesnt know the
 -- state changes that are occuring during the execution of the total step.
-type StepT m a = ReaderT Config (WriterT [Event] m) a
+newtype StepT m a = StepT (ReaderT Environment m a)
+  deriving (Functor, Applicative, Monad, MonadReader Environment, MonadIO)
 
 type Step a = StepT Identity a
 
-config :: Monad m => StepT m Config
-config = ask
+environment :: Monad m => StepT m Environment
+environment = StepT ask
 
-emit :: Monad m => Event -> StepT m ()
-emit evt = tell [evt]
+runStepT :: Monad m => StepT m a -> Environment -> m a
+runStepT (StepT step) env = runReaderT step env
 
--- ??? Should this be a typeclass for Enemy and Player to instantiate?
-env :: Monad m => Enemy -> StepT m Config
-env e = config >>= return . over enemies (delete e)
-
---                     step         pre config      post config
-runStepT :: Monad m => StepT m a -> Config -> m (a, Config)
-runStepT step c = fmap (fmap (merge c)) $ runWriterT $ runReaderT step c
-
-runStep :: Step a -> Config -> (a, Config)
+runStep :: Step a -> Environment -> a
 runStep step = runIdentity . runStepT step
 
 
 
 -- Util
-delete :: Eq a => a -> [a] -> [a]
-delete deleted xs = [ x | x <- xs, x /= deleted ]
-
 iterateUntilM :: Monad m => (a -> Bool) -> (a -> m a) -> a -> m ()
 iterateUntilM p f v
   | p v       = return ()
@@ -109,37 +87,10 @@ iterateUntilM p f v
 
 
 -- Run
-ended :: Config -> Bool
-ended conf = undefined
+ended :: a -> Bool
+ended e = undefined
 
-runGame :: Monad m => StepT m a -> Config -> m ()
+runGame :: Monad m => StepT m a -> Environment -> m ()
 runGame step = iterateUntilM ended exec
-  where exec c = liftM snd $ runStepT (step >> config) c
-
-
-
--- Exemple Prog
-computerStep :: Monad m => StepT m ()
-computerStep = config >>= mapM_ act . _enemies
-
-act :: Monad m => Enemy -> StepT m ()
-act e = do
-  c <- env e
-  case _variant e of
-    Spinner d -> emit $ spin d (_entity e) c
-    Walker a b -> emit $ walk a b (_entity e) c
-
-spin :: Dir -> Entity -> Config -> Event
-spin d e c = ChangeDir e (succ d)
-
-walk :: Pos -> Pos -> Entity -> Config -> Event
-walk a b e c = undefined
-  
-
-
--- Prog
-prog :: IO ()
-prog = runGame computerStep initConf
-  where initConf = undefined
-
+  where exec e = runStepT (step >> environment) e
 

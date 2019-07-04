@@ -12,24 +12,25 @@ offset = 100
 window :: Display
 window = InWindow "Honeypot" (width, height) (offset, offset)
 
+computerStep = undefined
 
 main :: IO ()
 main = simulate 
   window
   white
   simulationRate
-  initConfig
+  initEnv
   draw
   update
   where
     simulationRate :: Int
     simulationRate = 20
 
-    initConfig :: Config
-    initConfig = undefined
+    initEnv :: Environment
+    initEnv = undefined
 
-    draw :: Config -> Picture
-    draw c = undefined
+    draw :: Environment -> Picture
+    draw e = undefined
 
-    update :: ViewPort -> Float -> Config -> Config
+    update :: ViewPort -> Float -> Environment -> Environment
     update _ dt = snd . runStep computerStep
