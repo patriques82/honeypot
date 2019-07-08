@@ -1,3 +1,5 @@
 .stack-work/
 honeypot.cabal
 *~
+stack.yaml.lock
+tags
