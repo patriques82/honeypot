@@ -2,11 +2,11 @@
 
 module Lib where
 
-import           Control.Monad
+--import           Control.Monad
 import           Control.Monad.Reader
 import           Data.Functor.Identity
 import qualified Data.Map              as M
-import           Prelude               as P
+--import           Prelude               as P
 
 
 someFunc :: IO ()
@@ -26,10 +26,17 @@ data Variant = Spinner Dir
              | Walker Pos Pos
   deriving Eq
 
+data Event = ChangeDir Pos Dir
+           | Move Pos Dir
+           | Shoot Pos
+  deriving (Eq, Ord)
 
 
-data Entity = Entity Integer Dir
-  deriving Eq
+
+
+data Entity = Entity { life :: Integer
+                     , dir  :: Dir
+                     } deriving Eq
 
 data Enemy = Enemy Entity Variant
   deriving Eq
@@ -42,18 +49,13 @@ type TPlayer = (Event, Player)
 
 
 
-data Env = Env { obstacles :: [Pos]
+data Env = Env { dim       :: Dim
+               , obstacles :: [Pos]
                , enemies   :: M.Map Pos Enemy
                , player    :: (Pos, Player)
-               , dim       :: Dim
                }
 
-data TEnv = TEnv [Pos] (M.Map Pos TEnemy) (Pos, TPlayer) Dim
-
-data Event = ChangeDir Pos Dir
-           | Move Pos Dir
-           | Shoot Pos
-  deriving (Eq, Ord)
+data TEnv = TEnv Dim [Pos] (M.Map Pos TEnemy) (Pos, TPlayer)
 
 
 -- Combinators
@@ -66,8 +68,24 @@ newtype StepT m a = StepT (ReaderT Env m a)
 
 type Step a = StepT Identity a
 
+type PlayerEvent m = StepT m Event
+
 env :: Monad m => StepT m Env
 env = StepT ask
+
+dim' :: Monad m => StepT m Dim
+dim' = dim <$> env
+
+obstacles' :: Monad m => StepT m [Pos]
+obstacles' = obstacles <$> env
+
+enemies' :: Monad m => StepT m (M.Map Pos Enemy)
+enemies' = enemies <$> env
+
+player' :: Monad m => StepT m (Pos, Player)
+player' = player <$> env
+
+
 
 runStepT :: Monad m => StepT m a -> Env -> m a
 runStepT (StepT step) = runReaderT step
@@ -77,16 +95,29 @@ runStep step = runIdentity . runStepT step
 
 
 
+enemyStep :: Monad m => StepT m (M.Map Pos TEnemy)
+enemyStep = undefined
+
+playerStep :: Monad m => Event -> StepT m (Pos, TPlayer)
+playerStep event = ((,) event <$>) <$> player'
+
+transStep :: Monad m => PlayerEvent m -> StepT m TEnv
+transStep playerEvent =
+  TEnv <$> dim' <*> obstacles' <*> enemyStep <*> (playerEvent >>= playerStep)
+
+
 -- Util
 iterateUntilM :: Monad m => (a -> Bool) -> (a -> m a) -> a -> m ()
 iterateUntilM p f v
   | p v       = return ()
   | otherwise = f v >>= iterateUntilM p f
 
+
 -- Run
 ended :: a -> Bool
 ended = undefined
 
+-- Game Loop
 runGame :: Monad m => StepT m a -> Env -> m ()
 runGame step = iterateUntilM ended exec
   where exec = runStepT (step >> env)
