@@ -1,7 +1,7 @@
-import Graphics.Gloss
-import Graphics.Gloss.Data.ViewPort
+import           Graphics.Gloss
+import           Graphics.Gloss.Data.ViewPort
 
-import Lib
+import           Lib
 
 
 width, height, offset :: Int
@@ -15,7 +15,7 @@ window = InWindow "Honeypot" (width, height) (offset, offset)
 computerStep = undefined
 
 main :: IO ()
-main = simulate 
+main = simulate
   window
   white
   simulationRate
@@ -26,11 +26,11 @@ main = simulate
     simulationRate :: Int
     simulationRate = 20
 
-    initEnv :: Environment
+    initEnv :: Env
     initEnv = undefined
 
-    draw :: Environment -> Picture
-    draw e = undefined
+    draw :: Env -> Picture
+    draw = undefined
 
-    update :: ViewPort -> Float -> Environment -> Environment
-    update _ dt = snd . runStep computerStep
+    update :: ViewPort -> Float -> Env -> Env
+    update _ _ = snd . runStep computerStep

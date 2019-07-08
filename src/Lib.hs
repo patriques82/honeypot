@@ -1,60 +1,59 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 
 module Lib where
 
-import Prelude as P
-import Data.Foldable (foldl')
-import Data.Either (isLeft)
-import Data.List (sort)
-import qualified Data.Map as M
-import Control.Lens
-import Control.Monad
-import Control.Monad.Writer
-import Control.Monad.Reader
+import           Control.Monad
+import           Control.Monad.Reader
+import           Data.Functor.Identity
+import qualified Data.Map              as M
+import           Prelude               as P
 
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
 
-
 -- Data
-data Pos = Pos { _x :: Int
-               , _y :: Int
-               } deriving (Eq, Ord)
+data Pos = Pos Int Int
+  deriving (Eq, Ord)
+
+type Dim = Pos
 
 data Dir = Left | Up | Right | Down
   deriving (Eq, Ord, Enum, Bounded)
 
-data Variant = Spinner Dir 
+data Variant = Spinner Dir
              | Walker Pos Pos
   deriving Eq
 
-data Enemy = Enemy { _eLife :: Integer
-                   , _eDir :: Dir
-                   , _variant :: Variant
-                   } deriving Eq
 
-data Player = Player { _pLife :: Integer
-                     , _pDir :: Dir
-                     }
 
-data Environment = Env { _obstacles :: [Pos]
-                       , _enemies :: M.Map Pos Enemy
-                       , _player :: (Pos, Player)
-                       , _dim :: Pos
-                       }
+data Entity = Entity Integer Dir
+  deriving Eq
+
+data Enemy = Enemy Entity Variant
+  deriving Eq
+
+type TEnemy = (Event, Enemy)
+
+newtype Player = Player Entity
+
+type TPlayer = (Event, Player)
+
+
+
+data Env = Env { obstacles :: [Pos]
+               , enemies   :: M.Map Pos Enemy
+               , player    :: (Pos, Player)
+               , dim       :: Dim
+               }
+
+data TEnv = TEnv [Pos] (M.Map Pos TEnemy) (Pos, TPlayer) Dim
 
 data Event = ChangeDir Pos Dir
            | Move Pos Dir
            | Shoot Pos
   deriving (Eq, Ord)
-
-makeLenses ''Pos
-makeLenses ''Enemy
-makeLenses ''Environment
 
 
 -- Combinators
@@ -62,18 +61,18 @@ makeLenses ''Environment
 -- Similar to a State Monad with the difference that the state change is withheld
 -- until the total step is runned so that intermediate steps doesnt know the
 -- state changes that are occuring during the execution of the total step.
-newtype StepT m a = StepT (ReaderT Environment m a)
-  deriving (Functor, Applicative, Monad, MonadReader Environment, MonadIO)
+newtype StepT m a = StepT (ReaderT Env m a)
+  deriving (Functor, Applicative, Monad, MonadReader Env, MonadIO)
 
 type Step a = StepT Identity a
 
-environment :: Monad m => StepT m Environment
-environment = StepT ask
+env :: Monad m => StepT m Env
+env = StepT ask
 
-runStepT :: Monad m => StepT m a -> Environment -> m a
-runStepT (StepT step) env = runReaderT step env
+runStepT :: Monad m => StepT m a -> Env -> m a
+runStepT (StepT step) = runReaderT step
 
-runStep :: Step a -> Environment -> a
+runStep :: Step a -> Env -> a
 runStep step = runIdentity . runStepT step
 
 
@@ -84,13 +83,11 @@ iterateUntilM p f v
   | p v       = return ()
   | otherwise = f v >>= iterateUntilM p f
 
-
-
 -- Run
 ended :: a -> Bool
-ended e = undefined
+ended = undefined
 
-runGame :: Monad m => StepT m a -> Environment -> m ()
+runGame :: Monad m => StepT m a -> Env -> m ()
 runGame step = iterateUntilM ended exec
-  where exec e = runStepT (step >> environment) e
+  where exec = runStepT (step >> env)
 

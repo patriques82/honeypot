@@ -24,7 +24,6 @@ dependencies:
 - containers
 - mtl
 - monad-loops
-- lens
 - gloss
 
 library:
