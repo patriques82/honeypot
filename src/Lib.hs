@@ -56,7 +56,7 @@ data TEnv = TEnv Dim [Pos] (M.Map Pos TEnemy) (Pos, TPlayer)
 
 
 
-data Game = Cont (Env -> (Env, Game)) | Ended TEnv
+data Game = Cont Game | Ended TEnv
 
 
 -- Combinators
@@ -66,7 +66,7 @@ data Game = Cont (Env -> (Env, Game)) | Ended TEnv
 -- state changes that are occuring during the execution of the total step.
 
 newtype StepT m a = StepT (ReaderT Env m a) -- hide constructor on export
-  deriving (Functor, Applicative, Monad, MonadReader Env, MonadIO)
+  deriving (Functor, Applicative, Monad, MonadReader Env, MonadTrans)
 
 type Step a = StepT Identity a
 
@@ -87,6 +87,7 @@ dim' = _dim <$> env'
 obstacles' :: Monad m => StepT m [Pos]
 obstacles' = _obstacles <$> env'
 
+-- TODO List of (Pos, Enemy)
 enemies' :: Monad m => StepT m (M.Map Pos Enemy)
 enemies' = _enemies <$> env'
 
@@ -95,45 +96,32 @@ player' = _player <$> env'
 
 
 
+-- internal
 enemyStep :: Monad m => StepT m (M.Map Pos TEnemy)
 enemyStep = undefined -- logic
 
+-- internal
 playerStep :: Monad m => Event -> StepT m (Pos, TPlayer)
 playerStep event = ((,) event <$>) <$> player'
 
--- type for user to define
--- userDef :: Monad m => StepT m Event
+-- exported to user to create (StepT m TEnv)
+transStep :: Monad m => Event -> StepT m TEnv
+transStep e = TEnv <$> dim' <*> obstacles' <*> enemyStep <*> playerStep e
 
-transStep :: Monad m => StepT m (M.Map Pos TEnemy)
-                     -> StepT m (Pos, TPlayer)
-                     -> StepT m TEnv
-transStep enemySt playerSt =
-  TEnv <$> dim' <*> obstacles' <*> enemySt <*> playerSt
+-- exported
+mkGame :: Monad m => StepT m TEnv -> Env -> m Game
+mkGame step = runStepT go
+  where go = do tenv <- step
+                case resolve tenv of
+                  Just env -> Cont <$> lift (mkGame step env)
+                  Nothing  -> return (Ended tenv)
+
+resolve :: TEnv -> Maybe Env
+resolve = undefined
 
 
-
-mkGame :: Monad m => StepT m Event -> Env -> m Game
-mkGame playerEvent = runStepT step
-  where step = do ev <- playerEvent
-                  tenv <- transStep enemyStep (playerStep ev)
-                  resolve tenv
-
--- Decide if ended or continue based on TEnv (needs the whole TEnv for this)
-resolve :: Monad m => TEnv -> StepT m Game
-resolve tEnv = return (Cont f)
-  where f env = if not (ended tEnv)
-                   then (transform tEnv, Cont _)
-                   else (env, Ended tEnv)
-
-ended :: TEnv -> Bool
-ended = undefined
-
-transform :: TEnv -> Env
-transform = undefined
 
 -- Game Interpreter
-runGame :: Env -> Game -> IO ()
-runGame _ (Ended _)   = putStrLn "Finished"
-runGame e (Cont cont) = do
-  putStrLn "Continue"
-  uncurry runGame (cont e)
+runGame :: Game -> IO ()
+runGame (Cont g)  = runGame g
+runGame (Ended _) = putStrLn "Ended"
