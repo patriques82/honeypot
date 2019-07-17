@@ -10,7 +10,7 @@ someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
 
--- Data
+-- Data Types
 data Pos = Pos Int Int
   deriving (Eq, Ord)
 
@@ -23,16 +23,17 @@ data Variant = Spinner Dir
              | Walker Pos Pos
   deriving Eq
 
-data Event = ChangeDir Pos Dir
-           | Move Pos Dir
-           | Shoot Pos
+data Event = ChangeDir Dir
+           | Move Dir
+           | Shoot
   deriving (Eq, Ord)
 
 
 
 
-data Entity = Entity { _life :: Integer
-                     , _dir  :: Dir
+data Entity = Entity { _life     :: Integer
+                     , _dir      :: Dir
+                     , _shooting :: Bool
                      } deriving Eq
 
 data Enemy = Enemy Entity Variant
@@ -56,10 +57,7 @@ data TEnv = TEnv Dim [Pos] (M.Map Pos TEnemy) (Pos, TPlayer)
 
 
 
-data Game = Cont Game | Ended TEnv
-
-
--- Combinators
+-- Step Combinators
 
 -- Similar to a State Monad with the difference that the state change is withheld
 -- until the total step is runned so that intermediate steps doesnt know the
@@ -95,8 +93,8 @@ player' :: Monad m => StepT m (Pos, Player)
 player' = _player <$> env'
 
 
-
 -- internal
+-- TODO parts of enemystep subsystem
 enemyStep :: Monad m => StepT m (M.Map Pos TEnemy)
 enemyStep = undefined -- logic
 
@@ -109,19 +107,26 @@ transStep :: Monad m => Event -> StepT m TEnv
 transStep e = TEnv <$> dim' <*> obstacles' <*> enemyStep <*> playerStep e
 
 -- exported
-mkGame :: Monad m => StepT m TEnv -> Env -> m Game
-mkGame step = runStepT go
-  where go = do tenv <- step
-                case resolve tenv of
-                  Just env -> Cont <$> lift (mkGame step env)
-                  Nothing  -> return (Ended tenv)
+frames :: Monad m => StepT m TEnv -> Env -> m [Env]
+frames step env = do tenv <- runStepT step env
+                     case resolve tenv of
+                       Just e  -> fmap ((:) e) (frames step e)
+                       Nothing -> return []
 
+
+
+-- TODO parts of resolve subsystem
 resolve :: TEnv -> Maybe Env
-resolve = undefined
+resolve tenv@(TEnv d o _ _) = do
+  e' <- resolveEnemies tenv
+  p' <- resolvePlayer tenv
+  return (Env d o e' p')
+
+resolveEnemies :: TEnv -> Maybe (M.Map Pos Enemy)
+resolveEnemies = undefined
+
+resolvePlayer :: TEnv -> Maybe (Pos, Player)
+resolvePlayer = undefined
 
 
 
--- Game Interpreter
-runGame :: Game -> IO ()
-runGame (Cont g)  = runGame g
-runGame (Ended _) = putStrLn "Ended"
