@@ -3,8 +3,7 @@
 module Lib where
 
 import           Control.Monad.Reader
-import           Data.Functor.Identity
-import qualified Data.Map              as M
+import qualified Data.Map             as M
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
@@ -63,55 +62,55 @@ data TEnv = TEnv Dim [Pos] (M.Map Pos TEnemy) (Pos, TPlayer)
 -- until the total step is runned so that intermediate steps doesnt know the
 -- state changes that are occuring during the execution of the total step.
 
-newtype StepT m a = StepT (ReaderT Env m a) -- hide constructor on export
-  deriving (Functor, Applicative, Monad, MonadReader Env, MonadTrans)
+newtype Step a = Step (Reader Env a) -- hide constructor on export
+  deriving (Functor, Applicative, Monad, MonadReader Env)
 
-type Step a = StepT Identity a
-
-runStepT :: Monad m => StepT m a -> Env -> m a
-runStepT (StepT step) = runReaderT step
 
 runStep :: Step a -> Env -> a
-runStep step = runIdentity . runStepT step
+runStep (Step step) = runReader step
 
 
+env' :: Step Env
+env' = Step ask
 
-env' :: Monad m => StepT m Env
-env' = StepT ask
-
-dim' :: Monad m => StepT m Dim
+dim' :: Step Dim
 dim' = _dim <$> env'
 
-obstacles' :: Monad m => StepT m [Pos]
+obstacles' :: Step [Pos]
 obstacles' = _obstacles <$> env'
 
 -- TODO List of (Pos, Enemy)
-enemies' :: Monad m => StepT m (M.Map Pos Enemy)
+enemies' :: Step (M.Map Pos Enemy)
 enemies' = _enemies <$> env'
 
-player' :: Monad m => StepT m (Pos, Player)
+player' :: Step (Pos, Player)
 player' = _player <$> env'
 
 
+data Rules
+
 -- internal
 -- TODO parts of enemystep subsystem
-enemyStep :: Monad m => StepT m (M.Map Pos TEnemy)
+enemyStep :: Rules -> Step (M.Map Pos TEnemy)
 enemyStep = undefined -- logic
 
 -- internal
-playerStep :: Monad m => Event -> StepT m (Pos, TPlayer)
+playerStep :: Event -> Step (Pos, TPlayer)
 playerStep event = ((,) event <$>) <$> player'
 
 -- exported to user to create (StepT m TEnv)
-transStep :: Monad m => Event -> StepT m TEnv
-transStep e = TEnv <$> dim' <*> obstacles' <*> enemyStep <*> playerStep e
+transStep :: Rules -> Event -> Step TEnv
+transStep r e = TEnv <$> dim'
+                     <*> obstacles'
+                     <*> enemyStep r
+                     <*> playerStep e
 
 -- exported
-frames :: Monad m => StepT m TEnv -> Env -> m [Env]
-frames step env = do tenv <- runStepT step env
-                     case resolve tenv of
-                       Just e  -> fmap ((:) e) (frames step e)
-                       Nothing -> return []
+frames :: Step TEnv -> Env -> [Env]
+frames step env = let tenv = runStep step env
+                  in case resolve tenv of
+                    Just e  -> e : frames step e
+                    Nothing -> []
 
 
 
