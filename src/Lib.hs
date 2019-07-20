@@ -8,6 +8,12 @@ import qualified Data.Map             as M
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
+-- Rules
+-- Move, ChangeDir = 1 fuel
+-- Shoot = 5 fuel
+-- Collide = 10 fuel
+-- EnemyProximity = 10 fuel
+
 
 -- Data Types
 data Pos = Pos Int Int
@@ -15,44 +21,27 @@ data Pos = Pos Int Int
 
 type Dim = Pos
 
+type Fuel = Int
+
 data Dir = Left | Up | Right | Down
   deriving (Eq, Ord, Enum, Bounded)
 
-data Variant = Spinner Dir
-             | Walker Pos Pos
-  deriving Eq
-
-data Event = ChangeDir Dir
-           | Move Dir
-           | Shoot
+data Event = Left -- 1 fuel
+           | Right -- 1 fuel
+           | Move -- 1 fuel
+           | Shoot -- 5 fuel
   deriving (Eq, Ord)
 
+newtype Player = Player { _fuel :: Fuel
+                        , _dir  :: Dir 
+                        }
 
-
-
-data Entity = Entity { _life     :: Integer
-                     , _dir      :: Dir
-                     , _shooting :: Bool
-                     } deriving Eq
-
-data Enemy = Enemy Entity Variant
-  deriving Eq
-
-type TEnemy = (Event, Enemy)
-
-newtype Player = Player Entity
-
-type TPlayer = (Event, Player)
-
-
+data Obstacle = Wall | Block | Enemy
 
 data Env = Env { _dim       :: Dim
-               , _obstacles :: [Pos]
-               , _enemies   :: M.Map Pos Enemy
-               , _player    :: (Pos, Player)
+               , _obstacles :: Pos -> Obstacle -- M.Map Pos Obstacle
+               , _player    :: Player
                }
-
-data TEnv = TEnv Dim [Pos] (M.Map Pos TEnemy) (Pos, TPlayer)
 
 
 
@@ -70,62 +59,54 @@ runStep :: Step a -> Env -> a
 runStep (Step step) = runReader step
 
 
+-- Internal
 env' :: Step Env
 env' = Step ask
 
 dim' :: Step Dim
 dim' = _dim <$> env'
 
-obstacles' :: Step [Pos]
+obstacles' :: Step (M.Map Pos Obstacle)
 obstacles' = _obstacles <$> env'
-
--- TODO List of (Pos, Enemy)
-enemies' :: Step (M.Map Pos Enemy)
-enemies' = _enemies <$> env'
 
 player' :: Step (Pos, Player)
 player' = _player <$> env'
 
 
-data Rules
+-- Exported
+-- Identify obstacle infront
+identify :: Step Obstacle
+identify = undefined
 
--- internal
--- TODO parts of enemystep subsystem
-enemyStep :: Rules -> Step (M.Map Pos TEnemy)
-enemyStep = undefined -- logic
+lidarBack :: Step Int
+lidarBack = undefined
 
--- internal
-playerStep :: Event -> Step (Pos, TPlayer)
-playerStep event = ((,) event <$>) <$> player'
+lidarFront :: Step Int
+lidarFront = undefined
 
--- exported to user to create (StepT m TEnv)
-transStep :: Rules -> Event -> Step TEnv
-transStep r e = TEnv <$> dim'
-                     <*> obstacles'
-                     <*> enemyStep r
-                     <*> playerStep e
+lidarLeft :: Step Int
+lidarLeft = undefined
+
+lidarRight :: Step Int
+lidarRight = undefined
+
+
+
+
+
+-- provided by user
+playerStep :: Step Event
+playerStep = undefined
+
 
 -- exported
-frames :: Step TEnv -> Env -> [Env]
-frames step env = let tenv = runStep step env
-                  in case resolve tenv of
-                    Just e  -> e : frames step e
-                    Nothing -> []
-
+frames :: Step Event -> Env -> [Env]
+frames step env = let e = runStep step env
+                  in case resolve env e of
+                    Just env' -> e : frames step env'
+                    Nothing   -> []
 
 
 -- TODO parts of resolve subsystem
-resolve :: TEnv -> Maybe Env
-resolve tenv@(TEnv d o _ _) = do
-  e' <- resolveEnemies tenv
-  p' <- resolvePlayer tenv
-  return (Env d o e' p')
-
-resolveEnemies :: TEnv -> Maybe (M.Map Pos Enemy)
-resolveEnemies = undefined
-
-resolvePlayer :: TEnv -> Maybe (Pos, Player)
-resolvePlayer = undefined
-
-
-
+resolve ::  Env -> Event -> Maybe Env
+resolve = undefined
