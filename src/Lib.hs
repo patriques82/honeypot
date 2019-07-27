@@ -2,15 +2,15 @@
 
 module Lib where
 
-import           Control.Arrow        (first, second)
 import           Control.Monad.Reader
 import qualified Data.Map             as M
 import           Data.Monoid          (Sum (..))
 import           Data.Semigroup
 import           Prelude              (Applicative, Bool (..), Bounded, Enum,
-                                       Eq, IO, Int, Maybe (..), Ord, Show, not,
-                                       subtract, undefined, ($), (+), (-), (.),
-                                       (<), (<$>), (>), (>=), (||))
+                                       Eq, IO, Int, Maybe (..), Monad, Ord,
+                                       Show, not, pure, return, undefined, ($),
+                                       (+), (-), (.), (<), (<$>), (<*>), (>),
+                                       (>=), (>>=), (||))
 
 someFunc :: IO ()
 someFunc = undefined
@@ -38,10 +38,6 @@ data Event = TurnLeft     -- 1 fuel
            | Shoot        -- 5 fuel
   deriving (Eq, Ord)
 
-data Player = Player { fuel :: Fuel
-                     , dir  :: Dir
-                     , pos  :: Pos
-                     }
 
 data Cell = Empty | Wall | Block | Enemy
   deriving Show
@@ -50,9 +46,11 @@ instance Semigroup Cell where
   Empty <> x = x
   y     <> _ = y
 
-data Env = Env { dim    :: Dim
-               , cells  :: M.Map Pos Cell
-               , player :: Player
+data Env = Env { dim   :: Dim
+               , cells :: M.Map Pos Cell
+               , dir   :: Dir
+               , pos   :: Pos
+               , fuel  :: Fuel
                }
 
 
@@ -75,44 +73,84 @@ runStep (Step step) = runReader step
 env' :: Step Env
 env' = Step ask
 
-dim' :: Step Dim
-dim' = dim <$> env'
-
-player' :: Step Player
-player' = player <$> env'
-
 
 -- Exported
 -- Identify obstacle in front
 identify :: Step Cell
-identify = undefined
+identify = do
+  Env dim cells dir pos _ <- env'
+  let extract = case dir of
+                  Left  -> until notEmpty cell left
+                  Right -> until notEmpty cell right
+                  Down  -> until notEmpty cell down
+                  Up    -> until notEmpty cell up
+  return (runExt extract dim pos cells)
 
 lidarBack :: Step Int
-lidarBack = undefined
+lidarBack = do
+  Env dim cells dir pos _ <- env'
+  let extract = case dir of
+                  Left  -> until notEmpty (enumerate <$> cell) right
+                  Right -> until notEmpty (enumerate <$> cell) left
+                  Down  -> until notEmpty (enumerate <$> cell) up
+                  Up    -> until notEmpty (enumerate <$> cell) down
+  return $ getSum (runExt extract dim pos cells)
 
 lidarFront :: Step Int
-lidarFront = undefined
+lidarFront = do
+  Env dim cells dir pos _ <- env'
+  let extract = case dir of
+                  Left  -> until notEmpty (enumerate <$> cell) left
+                  Right -> until notEmpty (enumerate <$> cell) right
+                  Down  -> until notEmpty (enumerate <$> cell) down
+                  Up    -> until notEmpty (enumerate <$> cell) up
+  return $ getSum (runExt extract dim pos cells)
 
 lidarLeft :: Step Int
-lidarLeft = undefined
+lidarLeft = do
+  Env dim cells dir pos _ <- env'
+  let extract = case dir of
+                  Left  -> until notEmpty (enumerate <$> cell) down
+                  Right -> until notEmpty (enumerate <$> cell) up
+                  Down  -> until notEmpty (enumerate <$> cell) right
+                  Up    -> until notEmpty (enumerate <$> cell) left
+  return $ getSum (runExt extract dim pos cells)
 
 lidarRight :: Step Int
-lidarRight = undefined
-
+lidarRight = do
+  Env dim cells dir pos _ <- env'
+  let extract = case dir of
+                  Left  -> until notEmpty (enumerate <$> cell) up
+                  Right -> until notEmpty (enumerate <$> cell) down
+                  Down  -> until notEmpty (enumerate <$> cell) left
+                  Up    -> until notEmpty (enumerate <$> cell) right
+  return $ getSum (runExt extract dim pos cells)
 
 
 -- DSL for finding cells in map
-type Extract a = Dim -> Pos -> M.Map Pos Cell -> a
+newtype Extract a = Ext { runExt :: Dim -> Pos -> M.Map Pos Cell -> a }
+
+instance Functor Extract where
+  fmap f (Ext g) = Ext $ \d p m -> f (g d p m)
+
+instance Applicative Extract where
+  pure x = Ext $ \d p m -> x
+  (Ext f) <*> (Ext x) = Ext $ \d p m -> (f d p m) (x d p m)
+
+instance Monad Extract where
+  return = pure
+  (Ext x) >>= f = Ext $ \d p m ->
+    runExt (f (x d p m)) d p m
 
 -- primitives
 cell :: Extract Cell
-cell d p m = if not (outOfBounds d p)
-                then case M.lookup p m of
-                  Just o  -> o
-                  Nothing -> Empty
-                else Wall
+cell = Ext $ \d p m ->
+  if not (outOfBounds d p)
+     then case M.lookup p m of
+       Just o  -> o
+       Nothing -> Empty
+     else Wall
 
--- helper
 outOfBounds :: Dim -> Pos -> Bool
 outOfBounds (xx,yy) (x,y) =
   x > xx || x < 0 || y > yy || y < 0
@@ -121,33 +159,36 @@ outOfBounds (xx,yy) (x,y) =
 
 -- combinators
 up :: Extract a -> Extract a
-up ex d p m = ex d (second (subtract 1) p) m -- Arrow second
+up (Ext f) = Ext $ \d (x,y) m ->
+  f d (x,y-1) m
 
-eMap :: (a -> b) -> Extract a -> Extract b
-eMap f ext d p m = f $ ext d p m
+down :: Extract a -> Extract a
+down (Ext f) = Ext $ \d (x,y) m ->
+  f d (x,y+1) m
 
-until :: Semigroup a => Extract a -> (Extract a -> Extract a) -> (Cell -> Bool) -> Extract a
-until ext trans pred d p m =
-  let c = cell d p m
-      found = pred c
-  in if found
-        then ext d p m
-        else ext d p m <> trans (until ext trans pred) d p m
+left :: Extract a -> Extract a
+left (Ext f) = Ext $ \d (x,y) m ->
+  f d (x-1,y) m
+
+right :: Extract a -> Extract a
+right (Ext f) = Ext $ \d (x,y) m ->
+  f d (x+1,y) m
+
+until :: Semigroup a => (Cell -> Bool) -> Extract a -> (Extract a -> Extract a) -> Extract a
+until pred ext trans = do
+  c <- cell
+  if pred c
+     then ext
+     else (<>) <$> ext <*> trans (until pred ext trans)
 
 -- helpers
-numerate :: Cell -> Sum Int
-numerate Empty = Sum 1
-numerate _     = Sum 0
+enumerate :: Cell -> Sum Int
+enumerate Empty = Sum 1
+enumerate _     = Sum 0
 
 notEmpty :: Cell -> Bool
 notEmpty Empty = False
 notEmpty _     = True
-
-
--- (until cell up notEmpty) d p m = Enemy
--- (until (eMap numerate cell) up notEmpty = Sum 3
-
-
 
 
 -- provided by user
@@ -157,10 +198,11 @@ playerStep = undefined
 
 -- exported
 frames :: Step Event -> Env -> [Env]
-frames step env = let event = runStep step env
-                  in case resolve env event of
-                    Just env' -> env' : frames step env'
-                    Nothing   -> []
+frames step env =
+  let event = runStep step env
+  in case resolve env event of
+    Just env' -> env' : frames step env'
+    Nothing   -> []
 
 
 -- TODO parts of resolve subsystem
