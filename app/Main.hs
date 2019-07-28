@@ -1,7 +1,7 @@
 import           Graphics.Gloss
 import           Graphics.Gloss.Data.ViewPort
 
-import           Lib
+import           Honeypot
 
 
 width, height, offset :: Int
