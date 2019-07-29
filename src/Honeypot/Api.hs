@@ -1,11 +1,19 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Honeypot.Lib where
+module Honeypot.Api
+  ( identify
+  , lidarBack
+  , lidarFront
+  , lidarLeft
+  , lidarRight
+  , frames
+  ) where
 
-import           Data.Monoid      (Sum (..))
+import           Data.Monoid       (Sum (..))
 import           Data.Semigroup
 import           Honeypot.Extract
 import           Honeypot.Prelude
+import           Honeypot.Resolver
 import           Honeypot.Types
 
 -- Rules
@@ -13,8 +21,6 @@ import           Honeypot.Types
 -- Shoot = 5 fuel
 -- Collide = 10 fuel
 -- EnemyProximity = 10 fuel
-
-
 
 
 -- Exported
@@ -69,21 +75,18 @@ lidarRight = do
                   Up    -> until notEmpty (countEmpty <$> cell) right
   return $ getSum (runExt extract dim pos cells)
 
-
 -- provided by user
 playerStep :: Step Event
 playerStep = undefined
 
+enemiesStep :: Step (Map Pos Event)
+enemiesStep = undefined
 
 -- exported
-frames :: Step Event -> Env -> [Env]
-frames step env =
-  let event = runStep step env
-  in case resolve env event of
-    Just env' -> env' : frames step env'
+frames :: Step (Map Pos Event) -> Step Event -> Env -> [Env]
+frames enemies player env =
+  let playerEv = player `runStep` env
+      enemiesEv = enemies `runStep` env
+  in case resolve env enemiesEv playerEv of
+    Just env' -> env' : frames enemies player env'
     Nothing   -> []
-
-
--- TODO parts of resolve subsystem
-resolve ::  Env -> Event -> Maybe Env
-resolve = undefined

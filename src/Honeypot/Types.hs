@@ -12,15 +12,24 @@ type Dim = Pos
 
 type Fuel = Int
 
-data Dir = Left | Up | Right | Down
+type Id = Int
+
+data Dir = Left
+         | Up
+         | Right
+         | Down
 
 data Event = TurnLeft     -- 1 fuel
            | TurnRight    -- 1 fuel
            | MoveForward  -- 1 fuel
            | Shoot        -- 5 fuel
 
-data Cell = Empty | Wall | Block | Enemy
-  deriving Show
+type Behaviour = Pos -> Dir -> Event
+
+data Cell = Empty
+          | Wall
+          | Block
+          | Enemy Dir Behaviour
 
 instance Semigroup Cell where
   Empty <> x = x
@@ -41,3 +50,4 @@ runStep (Step step) = runReader step
 
 env' :: Step Env
 env' = Step ask
+

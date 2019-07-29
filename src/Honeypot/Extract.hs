@@ -13,14 +13,8 @@ module Honeypot.Extract
   , notEmpty
   ) where
 
-import           Data.Map       (Map, lookup)
-import           Data.Semigroup
+import           Honeypot.Prelude
 import           Honeypot.Types
-import           Prelude        (Applicative, Bool (..), Bounded, Enum, Eq,
-                                 Functor, IO, Int, Maybe (..), Monad, Ord, Show,
-                                 fmap, not, pure, return, undefined, ($), (+),
-                                 (-), (.), (<), (<$>), (<*>), (>), (>=), (>>=),
-                                 (||))
 
 newtype Extract a = Ext { runExt :: Dim -> Pos -> Map Pos Cell -> a }
 

@@ -9,6 +9,8 @@ module Honeypot.Prelude
   , Maybe (..)
   , Show (..)
   , Num (..)
+  , Ord (..)
+  , Sum (..)
   , Int
   , IO
   , Map
@@ -29,7 +31,7 @@ import           Data.Functor         (Functor (..), (<$>))
 import           Data.Int             (Int)
 import           Data.Map             (Map, lookup)
 import           Data.Maybe           (Maybe (..))
-import           Data.Semigroup       (Semigroup (..))
-import           Prelude              (Bool (..), Num (..), Show, not,
-                                       undefined, ($), (.), (||))
+import           Data.Semigroup       (Semigroup (..), Sum (..))
+import           Prelude              (Bool (..), Num (..), Ord (..), Show (..),
+                                       not, undefined, ($), (.), (||))
 import           System.IO            (IO)
