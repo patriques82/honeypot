@@ -27,53 +27,53 @@ import           Honeypot.Types
 -- Identify obstacle in front
 identify :: Step Cell
 identify = do
-  Env cells dir pos _ <- env'
-  let extract = case dir of
-                  Left  -> until notEmpty cell left
-                  Right -> until notEmpty cell right
-                  Down  -> until notEmpty cell down
-                  Up    -> until notEmpty cell up
-  return (runExt extract pos cells)
+  e <- env'
+  let extract = case pDir e of
+                  Left  -> until notEmpty cell leftE
+                  Right -> until notEmpty cell rightE
+                  Down  -> until notEmpty cell downE
+                  Up    -> until notEmpty cell upE
+  return (runExt extract (pos e) e)
 
 lidarBack :: Step Int
 lidarBack = do
-  Env cells dir pos _ <- env'
-  let extract = case dir of
-                  Left  -> until notEmpty (countEmpty <$> cell) right
-                  Right -> until notEmpty (countEmpty <$> cell) left
-                  Down  -> until notEmpty (countEmpty <$> cell) up
-                  Up    -> until notEmpty (countEmpty <$> cell) down
-  return $ getSum (runExt extract pos cells)
+  e <- env'
+  let extract = case pDir e of
+                  Left  -> until notEmpty (countEmpty <$> cell) rightE
+                  Right -> until notEmpty (countEmpty <$> cell) leftE
+                  Down  -> until notEmpty (countEmpty <$> cell) upE
+                  Up    -> until notEmpty (countEmpty <$> cell) downE
+  return $ getSum (runExt extract (pos e) e)
 
 lidarFront :: Step Int
 lidarFront = do
-  Env cells dir pos _ <- env'
-  let extract = case dir of
-                  Left  -> until notEmpty (countEmpty <$> cell) left
-                  Right -> until notEmpty (countEmpty <$> cell) right
-                  Down  -> until notEmpty (countEmpty <$> cell) down
-                  Up    -> until notEmpty (countEmpty <$> cell) up
-  return $ getSum (runExt extract pos cells)
+  e <- env'
+  let extract = case pDir e of
+                  Left  -> until notEmpty (countEmpty <$> cell) leftE
+                  Right -> until notEmpty (countEmpty <$> cell) rightE
+                  Down  -> until notEmpty (countEmpty <$> cell) downE
+                  Up    -> until notEmpty (countEmpty <$> cell) upE
+  return $ getSum (runExt extract (pos e) e)
 
 lidarLeft :: Step Int
 lidarLeft = do
-  Env cells dir pos _ <- env'
-  let extract = case dir of
-                  Left  -> until notEmpty (countEmpty <$> cell) down
-                  Right -> until notEmpty (countEmpty <$> cell) up
-                  Down  -> until notEmpty (countEmpty <$> cell) right
-                  Up    -> until notEmpty (countEmpty <$> cell) left
-  return $ getSum (runExt extract pos cells)
+  e <- env'
+  let extract = case pDir e of
+                  Left  -> until notEmpty (countEmpty <$> cell) downE
+                  Right -> until notEmpty (countEmpty <$> cell) upE
+                  Down  -> until notEmpty (countEmpty <$> cell) rightE
+                  Up    -> until notEmpty (countEmpty <$> cell) leftE
+  return $ getSum (runExt extract (pos e) e)
 
 lidarRight :: Step Int
 lidarRight = do
-  Env cells dir pos _ <- env'
-  let extract = case dir of
-                  Left  -> until notEmpty (countEmpty <$> cell) up
-                  Right -> until notEmpty (countEmpty <$> cell) down
-                  Down  -> until notEmpty (countEmpty <$> cell) left
-                  Up    -> until notEmpty (countEmpty <$> cell) right
-  return $ getSum (runExt extract pos cells)
+  e <- env'
+  let extract = case pDir e of
+                  Left  -> until notEmpty (countEmpty <$> cell) upE
+                  Right -> until notEmpty (countEmpty <$> cell) downE
+                  Down  -> until notEmpty (countEmpty <$> cell) leftE
+                  Up    -> until notEmpty (countEmpty <$> cell) rightE
+  return $ getSum (runExt extract (pos e) e)
 
 -- provided by user
 playerStep :: Step Event

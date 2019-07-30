@@ -7,21 +7,8 @@ module Honeypot.Resolver
   ) where
 
 import           Control.Monad.State
-import           Honeypot.Extract
 import           Honeypot.Prelude
 import           Honeypot.Types
-
---data Event = TurnLeft     -- 1 fuel
-           -- | TurnRight    -- 1 fuel
-           -- | MoveForward  -- 1 fuel
-           -- | Shoot        -- 5 fuel
-
---data Env = Env { dim   :: Dim
-               --, cells :: Map Pos Cell
-               --, dir   :: Dir
-               --, pos   :: Pos
-               --, fuel  :: Fuel
-               --}
 
 newtype EventCalc a = EventCalc { runCalc :: StateT Env Maybe a }
   deriving (Functor, Applicative, Monad, MonadState Env)
@@ -35,32 +22,62 @@ events enemyEvents playerEvent = do
   execEnemies enemyEvents
   execPlayer playerEvent
 
+
+-- Enemy events
 execEnemies :: Map Pos Event -> EventCalc ()
 execEnemies events = do
   calculateMovements events
   calculateTurns events
 
+calculateMovements :: Map Pos Event -> EventCalc ()
+calculateMovements events = do
+  env <- get
+  put env { enemies = foldrWithKey' moveForward' (enemies env) events }
+
+moveForward' :: Pos -> Event -> Matrix (Maybe Enemy) -> Matrix (Maybe Enemy)
+moveForward' pos@(x,y) MoveForward m =
+  case m ! pos of
+    Nothing    ->
+      m
+    Just enemy ->
+      let m' = setElem Nothing pos m
+          pos' = forward (eDir enemy) pos
+      in setElem (Just enemy) pos' m'
+moveForward' _ _ m = m
+
+calculateTurns :: Map Pos Event -> EventCalc ()
+calculateTurns events = do
+  env <- get
+  put env { enemies = foldrWithKey' turn' (enemies env) events }
+
+turn' :: Pos -> Event -> Matrix (Maybe Enemy) -> Matrix (Maybe Enemy)
+turn' pos TurnRight m =
+  case m ! pos of
+    Nothing    ->
+      m
+    Just enemy ->
+      let enemy' = enemy { eDir = right (eDir enemy) }
+      in setElem (Just enemy') pos m
+turn' pos TurnLeft m  =
+  case m ! pos of
+    Nothing    ->
+      m
+    Just enemy ->
+      let enemy' = enemy { eDir = left (eDir enemy) }
+      in setElem (Just enemy') pos m
+turn' _ _ m           = m
+
+
+-- Player event
 execPlayer :: Event -> EventCalc ()
 execPlayer e = do
   case e of
-    TurnLeft    -> turnLeft -- 1 fuel
-    TurnRight   -> turnRight -- 1 fuel
+    TurnLeft    -> turnLeft    -- 1 fuel
+    TurnRight   -> turnRight   -- 1 fuel
     MoveForward -> moveForward -- 1 fuel
-    Shoot       -> shoot -- 5 fuel
+    Shoot       -> shoot       -- 5 fuel
   calculateCollisions
   calculateHits
-
-calculateMovements :: Map Pos Event -> EventCalc ()
-calculateMovements events =
-  let moves = flip filter events $ \case
-                                      MoveForward -> True
-                                      _           -> False
-  in do
-    env <- get
-    put env
-
-calculateTurns :: Map Pos Event -> EventCalc ()
-calculateTurns = undefined
 
 -- may return Nothing (player killed) and shortcurcuit the rest of the calculations
 calculateCollisions :: EventCalc ()

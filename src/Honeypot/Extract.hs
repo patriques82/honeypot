@@ -4,10 +4,10 @@ module Honeypot.Extract
   ( Extract
   , runExt
   , cell
-  , up
-  , down
-  , left
-  , right
+  , upE
+  , downE
+  , leftE
+  , rightE
   , until
   , countEmpty
   , notEmpty
@@ -16,42 +16,45 @@ module Honeypot.Extract
 import           Honeypot.Prelude
 import           Honeypot.Types
 
-newtype Extract a = Ext { runExt :: Pos -> Matrix Cell -> a }
+newtype Extract a = Ext { runExt :: Pos -> Env -> a }
 
 instance Functor Extract where
-  fmap f (Ext g) = Ext $ \p m -> f (g p m)
+  fmap f (Ext g) = Ext $ \p e -> f (g p e)
 
 instance Applicative Extract where
-  pure x = Ext $ \p m -> x
-  (Ext f) <*> (Ext x) = Ext $ \p m -> (f p m) (x p m)
+  pure x = Ext $ \_ _ -> x
+  (Ext f) <*> (Ext x) = Ext $ \p e -> (f p e) (x p e)
 
 instance Monad Extract where
   return = pure
-  (Ext x) >>= f = Ext $ \p m ->
-    runExt (f (x p m)) p m
+  (Ext x) >>= f = Ext $ \p e ->
+    runExt (f (x p e)) p e
 
 cell :: Extract Cell
-cell = Ext $ \(x,y) m -> m ! (x,y)
+cell = Ext $ \p e ->
+  let enemy = const Enemy <$> enemies e ! p
+      block = const Block <$> blocks e ! p
+      cell = enemy <> block
+   in if outOfBounds p (dim e)
+         then Wall
+         else case cell of
+                Nothing -> Empty
+                Just x  -> x
 
-outOfBounds :: Pos -> Matrix Cell -> Bool
-outOfBounds (x,y) m = undefined
-  --x > xx || x < 0 || y > yy || y < 0
-
-
-up :: Extract a -> Extract a
-up (Ext f) = Ext $ \(x,y) m ->
+upE :: Extract a -> Extract a
+upE (Ext f) = Ext $ \(x,y) m ->
   f (x,y-1) m
 
-down :: Extract a -> Extract a
-down (Ext f) = Ext $ \(x,y) m ->
+downE :: Extract a -> Extract a
+downE (Ext f) = Ext $ \(x,y) m ->
   f (x,y+1) m
 
-left :: Extract a -> Extract a
-left (Ext f) = Ext $ \(x,y) m ->
+leftE :: Extract a -> Extract a
+leftE (Ext f) = Ext $ \(x,y) m ->
   f (x-1,y) m
 
-right :: Extract a -> Extract a
-right (Ext f) = Ext $ \(x,y) m ->
+rightE :: Extract a -> Extract a
+rightE (Ext f) = Ext $ \(x,y) m ->
   f (x+1,y) m
 
 until :: Semigroup a => (Cell -> Bool) -> Extract a -> (Extract a -> Extract a) -> Extract a
