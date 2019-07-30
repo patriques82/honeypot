@@ -35,8 +35,7 @@ instance Semigroup Cell where
   Empty <> x = x
   y     <> _ = y
 
-data Env = Env { dim   :: Dim
-               , cells :: Map Pos Cell
+data Env = Env { cells :: Matrix Cell
                , dir   :: Dir
                , pos   :: Pos
                , fuel  :: Fuel

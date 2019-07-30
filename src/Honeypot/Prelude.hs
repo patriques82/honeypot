@@ -13,9 +13,10 @@ module Honeypot.Prelude
   , Sum (..)
   , Int
   , IO
-  , Map
-  , lookup
+  , module Data.Matrix
+  , module Data.Map
   , undefined
+  , flip
   , (<$>)
   , ($)
   , (.)
@@ -29,9 +30,10 @@ import           Control.Monad.Reader (MonadReader, Reader, ask, runReader)
 import           Data.Eq              (Eq (..))
 import           Data.Functor         (Functor (..), (<$>))
 import           Data.Int             (Int)
-import           Data.Map             (Map, lookup)
+import           Data.Map             (Map, filter, insert, lookup, singleton)
+import           Data.Matrix
 import           Data.Maybe           (Maybe (..))
 import           Data.Semigroup       (Semigroup (..), Sum (..))
 import           Prelude              (Bool (..), Num (..), Ord (..), Show (..),
-                                       not, undefined, ($), (.), (||))
+                                       flip, not, undefined, ($), (.), (||))
 import           System.IO            (IO)

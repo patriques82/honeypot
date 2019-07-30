@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 
 module Honeypot.Resolver
@@ -50,7 +51,13 @@ execPlayer e = do
   calculateHits
 
 calculateMovements :: Map Pos Event -> EventCalc ()
-calculateMovements = undefined
+calculateMovements events =
+  let moves = flip filter events $ \case
+                                      MoveForward -> True
+                                      _           -> False
+  in do
+    env <- get
+    put env
 
 calculateTurns :: Map Pos Event -> EventCalc ()
 calculateTurns = undefined
