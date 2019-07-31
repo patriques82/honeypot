@@ -25,6 +25,12 @@ forward Right (x,y) = (x+1,y)
 forward Up (x,y)    = (x,y-1)
 forward Down (x,y)  = (x,y+1)
 
+backward :: Dir -> Pos -> Pos
+backward Left (x,y)  = (x+1,y)
+backward Right (x,y) = (x-1,y)
+backward Up (x,y)    = (x,y+1)
+backward Down (x,y)  = (x,y-1)
+
 right :: Dir -> Dir
 right Left  = Up
 right Right = Down
@@ -37,19 +43,20 @@ left Right = Up
 left Up    = Left
 left Down  = Right
 
-outOfBounds :: Pos -> Dim -> Bool
-outOfBounds (x,y) (xx,yy) =
+outOfBounds :: Dim -> Pos -> Bool
+outOfBounds (xx,yy) (x,y) =
   x > xx || x < 0 || y > yy || y < 0
 
 data Event = TurnLeft     -- 1 fuel
            | TurnRight    -- 1 fuel
            | MoveForward  -- 1 fuel
+           | MoveBackward -- 1 fuel
            | Shoot        -- 5 fuel
 
 type Behaviour = Pos -> Dir -> Event
 
-data Enemy = E { eDir :: Dir
-               , beh  :: Behaviour
+data Enemy = E { eDir      :: Dir
+               , behaviour :: Behaviour
                }
 
 data Block = B
@@ -67,8 +74,8 @@ data Env = Env { dim     :: Dim
                , enemies :: Matrix (Maybe Enemy)
                , blocks  :: Matrix (Maybe Block)
                , pDir    :: Dir
-               , pos     :: Pos
-               , fuel    :: Fuel
+               , pPos    :: Pos
+               , pFuel   :: Fuel
                }
 
 newtype Step a = Step (Reader Env a) -- hide constructor on export

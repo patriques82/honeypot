@@ -18,6 +18,7 @@ module Honeypot.Prelude
   , undefined
   , const
   , id
+  , subtract
   , flip
   , (<$>)
   , ($)
@@ -38,6 +39,6 @@ import           Data.Matrix
 import           Data.Maybe           (Maybe (..))
 import           Data.Semigroup       (Semigroup (..), Sum (..))
 import           Prelude              (Bool (..), Num (..), Ord (..), Show (..),
-                                       const, flip, id, not, undefined, ($),
-                                       (.), (||))
+                                       const, flip, id, not, subtract,
+                                       undefined, ($), (.), (||))
 import           System.IO            (IO)

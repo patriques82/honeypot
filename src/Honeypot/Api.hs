@@ -1,7 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Honeypot.Api
-  ( identify
+  ( identifyTarget
   , lidarBack
   , lidarFront
   , lidarLeft
@@ -24,16 +24,19 @@ import           Honeypot.Types
 
 
 -- Exported
+currentFuel :: Step Int
+currentFuel = pFuel <$> env'
+
 -- Identify obstacle in front
-identify :: Step Cell
-identify = do
+identifyTarget :: Step Cell
+identifyTarget = do
   e <- env'
   let extract = case pDir e of
                   Left  -> until notEmpty cell leftE
                   Right -> until notEmpty cell rightE
                   Down  -> until notEmpty cell downE
                   Up    -> until notEmpty cell upE
-  return (runExt extract (pos e) e)
+  return (runExt extract (pPos e) e)
 
 lidarBack :: Step Int
 lidarBack = do
@@ -43,7 +46,7 @@ lidarBack = do
                   Right -> until notEmpty (countEmpty <$> cell) leftE
                   Down  -> until notEmpty (countEmpty <$> cell) upE
                   Up    -> until notEmpty (countEmpty <$> cell) downE
-  return $ getSum (runExt extract (pos e) e)
+  return $ getSum (runExt extract (pPos e) e)
 
 lidarFront :: Step Int
 lidarFront = do
@@ -53,7 +56,7 @@ lidarFront = do
                   Right -> until notEmpty (countEmpty <$> cell) rightE
                   Down  -> until notEmpty (countEmpty <$> cell) downE
                   Up    -> until notEmpty (countEmpty <$> cell) upE
-  return $ getSum (runExt extract (pos e) e)
+  return $ getSum (runExt extract (pPos e) e)
 
 lidarLeft :: Step Int
 lidarLeft = do
@@ -63,7 +66,7 @@ lidarLeft = do
                   Right -> until notEmpty (countEmpty <$> cell) upE
                   Down  -> until notEmpty (countEmpty <$> cell) rightE
                   Up    -> until notEmpty (countEmpty <$> cell) leftE
-  return $ getSum (runExt extract (pos e) e)
+  return $ getSum (runExt extract (pPos e) e)
 
 lidarRight :: Step Int
 lidarRight = do
@@ -73,7 +76,7 @@ lidarRight = do
                   Right -> until notEmpty (countEmpty <$> cell) downE
                   Down  -> until notEmpty (countEmpty <$> cell) leftE
                   Up    -> until notEmpty (countEmpty <$> cell) rightE
-  return $ getSum (runExt extract (pos e) e)
+  return $ getSum (runExt extract (pPos e) e)
 
 -- provided by user
 playerStep :: Step Event

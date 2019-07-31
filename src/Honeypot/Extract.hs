@@ -35,7 +35,7 @@ cell = Ext $ \p e ->
   let enemy = const Enemy <$> enemies e ! p
       block = const Block <$> blocks e ! p
       cell = enemy <> block
-   in if outOfBounds p (dim e)
+   in if outOfBounds (dim e) p
          then Wall
          else case cell of
                 Nothing -> Empty
