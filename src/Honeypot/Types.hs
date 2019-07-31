@@ -12,8 +12,6 @@ type Dim = Pos
 
 type Fuel = Int
 
-type Id = Int
-
 data Dir = Left
          | Up
          | Right
@@ -84,6 +82,6 @@ newtype Step a = Step (Reader Env a) -- hide constructor on export
 runStep :: Step a -> Env -> a
 runStep (Step step) = runReader step
 
-env' :: Step Env
-env' = Step ask
+env :: Step Env
+env = Step ask
 

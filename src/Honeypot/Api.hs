@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+-- This module should be the only public
 module Honeypot.Api
   ( identifyTarget
   , lidarBack
@@ -7,6 +8,14 @@ module Honeypot.Api
   , lidarLeft
   , lidarRight
   , frames
+  -- reexported types
+  , Step
+  , Event (..)
+  , Cell (..)
+  , Dir (..)
+  , Pos
+  , Dim
+  , Fuel
   ) where
 
 import           Data.Monoid       (Sum (..))
@@ -16,21 +25,13 @@ import           Honeypot.Prelude
 import           Honeypot.Resolver
 import           Honeypot.Types
 
--- Rules
--- Move, ChangeDir = 1 fuel
--- Shoot = 5 fuel
--- Collide = 10 fuel
--- EnemyProximity = 10 fuel
-
-
--- Exported
 currentFuel :: Step Int
-currentFuel = pFuel <$> env'
+currentFuel = pFuel <$> env
 
 -- Identify obstacle in front
 identifyTarget :: Step Cell
 identifyTarget = do
-  e <- env'
+  e <- env
   let extract = case pDir e of
                   Left  -> until notEmpty cell leftE
                   Right -> until notEmpty cell rightE
@@ -40,7 +41,7 @@ identifyTarget = do
 
 lidarBack :: Step Int
 lidarBack = do
-  e <- env'
+  e <- env
   let extract = case pDir e of
                   Left  -> until notEmpty (countEmpty <$> cell) rightE
                   Right -> until notEmpty (countEmpty <$> cell) leftE
@@ -50,7 +51,7 @@ lidarBack = do
 
 lidarFront :: Step Int
 lidarFront = do
-  e <- env'
+  e <- env
   let extract = case pDir e of
                   Left  -> until notEmpty (countEmpty <$> cell) leftE
                   Right -> until notEmpty (countEmpty <$> cell) rightE
@@ -60,7 +61,7 @@ lidarFront = do
 
 lidarLeft :: Step Int
 lidarLeft = do
-  e <- env'
+  e <- env
   let extract = case pDir e of
                   Left  -> until notEmpty (countEmpty <$> cell) downE
                   Right -> until notEmpty (countEmpty <$> cell) upE
@@ -70,7 +71,7 @@ lidarLeft = do
 
 lidarRight :: Step Int
 lidarRight = do
-  e <- env'
+  e <- env
   let extract = case pDir e of
                   Left  -> until notEmpty (countEmpty <$> cell) upE
                   Right -> until notEmpty (countEmpty <$> cell) downE
@@ -85,7 +86,6 @@ playerStep = undefined
 enemiesStep :: Step (Map Pos Event)
 enemiesStep = undefined
 
--- exported
 frames :: Step (Map Pos Event) -> Step Event -> Env -> [Env]
 frames enemies player env =
   let playerEv = player `runStep` env

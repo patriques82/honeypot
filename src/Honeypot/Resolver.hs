@@ -6,6 +6,7 @@ module Honeypot.Resolver
   ) where
 
 import qualified Control.Monad.State as ST
+import           Honeypot.Extract    (cell, runExt)
 import           Honeypot.Prelude
 import           Honeypot.Types
 
@@ -67,7 +68,11 @@ execPlayer e = do
 
 -- may return Nothing (player killed) and shortcurcuit the rest of the calculations
 calculateCollisions :: EventCalc ()
-calculateCollisions = undefined
+calculateCollisions = do
+  env <- get
+  case runExt cell (pPos env) env of
+    Empty -> return ()
+    _     -> adjustFuel (subtract 10) -- wall, block or enemy
 
 turnLeft, turnRight, moveForward, moveBackward, shoot :: EventCalc ()
 
@@ -93,15 +98,14 @@ shoot = do
 
 removeEnemies :: EventCalc ()
 removeEnemies = do
-  env <- get
-  let enemies' = go (outOfBounds (dim env)) (forward (pDir env)) (pPos env) (enemies env)
-  put env { enemies = enemies' }
+  env@(Env dim es _ dir pos _) <- get
+  let es' = go (outOfBounds dim) (forward dir) pos es
+  put env { enemies = es' }
   where
-    go :: (Pos -> Bool) -> (Pos -> Pos) -> Pos -> Matrix (Maybe Enemy) -> Matrix (Maybe Enemy)
-    go pred shift p m =
-      if pred p
-         then m
-         else go pred shift (shift p) (setElem Nothing p m)
+    go pred shift pos es =
+      if pred pos
+         then es
+         else go pred shift (shift pos) (setElem Nothing pos es)
 
 adjustFuel :: (Int -> Int) -> EventCalc ()
 adjustFuel f = do
