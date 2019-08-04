@@ -1,13 +1,17 @@
-{-# LANGUAGE GADTs             #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
 
 module Honeypot.Config.Env where
 
+import           Control.Monad.Except (Except, MonadError, throwError)
+import           Control.Monad.Reader (MonadReader, ReaderT, ask, runReader)
 import           Data.Matrix          (matrix, setElem)
 import           Honeypot.Config.Path (Path, evalP)
 import           Honeypot.Prelude
 import           Honeypot.Types
 
+-- TODO this should go in Env
 data Player = P Fuel Pos Dir
 
 data Config a where
@@ -20,24 +24,33 @@ data ConfigError = BlockOutOfBounds
                  | EnemyPathIsNotStraightLines
                  | NoPointsInEnemyPath
 
-evalC :: Dim -> Config a -> Either ConfigError a
-evalC (y,x) (CPlayer fuel pos dir)      = Right (P fuel pos dir)
-evalC (y,x) (CBoard ps)                 =
+newtype ConfigEval a = ConfigEval { runConfEval :: ReaderT Dim (Except ConfigError) a }
+  deriving (Functor, Applicative, Monad, MonadReader Dim, MonadError ConfigError)
+
+evalC :: Config a -> ConfigEval a
+evalC (CPlayer fuel pos dir) =
+  return (P fuel pos dir)
+evalC (CBoard ps) = do
+  (y,x) <- ask
   let init = matrix y x $ \_ -> Nothing
       f m p = setElem (Just B) p m
-   in case find (outOfBounds (y,x)) ps of -- use traverse instead
-        Nothing -> Right $ Board (y,x) (foldl' f init ps)
-        Just p  -> Left BlockOutOfBounds
-evalC d (CEnemies paths)            =
+  case find (outOfBounds (y,x)) ps of
+    Just p  -> throwError BlockOutOfBounds
+    Nothing -> return $ Board (y,x) (foldl' f init ps)
+evalC (CEnemies paths) = do
+  d <- ask
   case traverse (evalP d) paths of
-    Nothing     -> Left EnemyPathIsNotStraightLines
+    Nothing     -> throwError EnemyPathIsNotStraightLines
     Just paths' -> fromList <$> traverse evalEnemy paths'
-evalC d (CEnv board enemies player) = undefined -- no collision between player and cells, and
+evalC (CEnv board enemies player) = do
+  b <- evalC board
+  e <- evalC enemies
+  p <- evalC player
+  return undefined
 
--- smart constructor
-evalEnemy :: [Pos] -> Either ConfigError Enemy
-evalEnemy [] = Left NoPointsInEnemyPath
-evalEnemy ps@(p:ps') = Right (E p Forward f)
+evalEnemy :: [Pos] -> ConfigEval Enemy
+evalEnemy [] = throwError NoPointsInEnemyPath
+evalEnemy ps@(p:ps') = return (E p Forward f)
   where
     xs = zip ps ps' -- could be one point
     x = head xs -- this is always ok by def
