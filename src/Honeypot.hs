@@ -1,7 +1,5 @@
 module Honeypot
-  ( module X
+  ( module Honeypot.Api
   ) where
 
-import           Honeypot.Api     as X
-import           Honeypot.Extract as X
-import           Honeypot.Types   as X
+import           Honeypot.Api

@@ -13,6 +13,7 @@ module Honeypot.Extract
   , notEmpty
   ) where
 
+import           Data.Matrix
 import           Honeypot.Prelude
 import           Honeypot.Types
 
@@ -32,30 +33,30 @@ instance Monad Extract where
 
 cell :: Extract Cell
 cell = Ext $ \p e ->
-  let enemy = const Enemy <$> enemies e ! p
-      block = const Block <$> blocks e ! p
+  let enemy = const Enemy <$> find ((==) p . pathPos) (enemies e)
+      block = const Block <$> terrain (board e) ! p
       cell = enemy <> block
-   in if outOfBounds (dim e) p
+   in if outOfBounds (dim (board e)) p
          then Wall
          else case cell of
                 Nothing -> Empty
                 Just x  -> x
 
 upE :: Extract a -> Extract a
-upE (Ext f) = Ext $ \(x,y) m ->
-  f (x,y-1) m
+upE (Ext f) = Ext $ \(y,x) m ->
+  f (y-1,x) m
 
 downE :: Extract a -> Extract a
-downE (Ext f) = Ext $ \(x,y) m ->
-  f (x,y+1) m
+downE (Ext f) = Ext $ \(y,x) m ->
+  f (y+1,x) m
 
 leftE :: Extract a -> Extract a
-leftE (Ext f) = Ext $ \(x,y) m ->
-  f (x-1,y) m
+leftE (Ext f) = Ext $ \(y,x) m ->
+  f (y,x-1) m
 
 rightE :: Extract a -> Extract a
-rightE (Ext f) = Ext $ \(x,y) m ->
-  f (x+1,y) m
+rightE (Ext f) = Ext $ \(y,x) m ->
+  f (y,x+1) m
 
 until :: Semigroup a => (Cell -> Bool) -> Extract a -> (Extract a -> Extract a) -> Extract a
 until pred ext trans = do

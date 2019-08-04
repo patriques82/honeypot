@@ -33,4 +33,4 @@ main = simulate
     draw = undefined
 
     update :: ViewPort -> Float -> Env -> Env
-    update _ _ = snd . runStep computerStep
+    update _ _ = undefined --snd . runStep computerStep

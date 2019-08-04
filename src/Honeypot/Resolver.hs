@@ -22,38 +22,25 @@ put = ST.put
 get :: EventCalc Env
 get = ST.get
 
-resolve :: Env -> Map Pos Event -> Event -> Maybe Env
-resolve env enemyEvents playerEvent =
-  ST.execStateT (runCalc (execEvents enemyEvents playerEvent)) env
+resolve :: Env -> Event -> Maybe Env
+resolve env event =
+  ST.execStateT (runCalc (exec event)) env
 
-execEvents :: Map Pos Event -> Event -> EventCalc ()
-execEvents enemyEvents playerEvent = do
-  execEnemies enemyEvents
-  execPlayer playerEvent
+exec :: Event -> EventCalc ()
+exec e = do
+  execPlayer e
+  execEnemies
 
--- Enemy events
-execEnemies :: Map Pos Event -> EventCalc ()
-execEnemies events = do
+execEnemies :: EventCalc ()
+execEnemies = do
   env <- get
-  put env { enemies = foldrWithKey' move' (enemies env) events }
-  where
-    move' pos@(x,y) ev m =
-      case (m ! pos, ev) of
-        (Nothing, _) -> m
-        (Just enemy, MoveForward) ->
-          let m' = setElem Nothing pos m
-              pos' = forward (eDir enemy) pos
-          in setElem (Just enemy) pos' m'
-        (Just enemy, MoveBackward) ->
-          let m' = setElem Nothing pos m
-              pos' = backward (eDir enemy) pos
-          in setElem (Just enemy) pos' m'
-        (Just enemy, TurnRight) ->
-          let enemy' = enemy { eDir = right (eDir enemy) }
-          in setElem (Just enemy') pos m
-        (Just enemy, TurnLeft) ->
-          let enemy' = enemy { eDir = left (eDir enemy) }
-          in setElem (Just enemy') pos m
+  let shift (E pos dir ev) =
+        case ev dir pos of
+          Start d -> undefined
+          Move d  -> E (forward d pos) dir ev
+          End d   -> E pos (toggle dir) ev
+      es' = map shift (enemies env)
+  put env { enemies = es' }
 
 -- Player event
 execPlayer :: Event -> EventCalc ()
@@ -70,12 +57,11 @@ execPlayer e = do
 calculateCollisions :: EventCalc ()
 calculateCollisions = do
   env <- get
-  case runExt cell (pPos env) env of
+  case runExt cell (pos env) env of
     Empty -> return ()
     _     -> adjustFuel (subtract 10) -- wall, block or enemy
 
 turnLeft, turnRight, moveForward, moveBackward, shoot :: EventCalc ()
-
 turnLeft = do
   adjustFuel (subtract 1)
   turn left
@@ -98,31 +84,29 @@ shoot = do
 
 removeEnemies :: EventCalc ()
 removeEnemies = do
-  env@(Env dim es _ dir pos _) <- get
-  let es' = go (outOfBounds dim) (forward dir) pos es
-  put env { enemies = es' }
-  where
-    go pred shift pos es =
-      if pred pos
-         then es
-         else go pred shift (shift pos) (setElem Nothing pos es)
+  env@(Env board es dir pos _) <- get
+  let view = fromList $ playerView dir pos (dim board)
+      pred e = member (pathPos e) view
+  put env { enemies = filter pred es }
 
 adjustFuel :: (Int -> Int) -> EventCalc ()
 adjustFuel f = do
   env <- get
-  let fuel' = f (pFuel env)
+  let fuel' = f (fuel env)
   if fuel' < 0
      then lift Nothing -- end game
-     else put env { pFuel = fuel' }
+     else put env { fuel = fuel' }
 
 turn :: (Dir -> Dir) -> EventCalc ()
 turn f = do
   env <- get
-  let dir' = f (pDir env)
-  put env { pDir = dir' }
+  let dir' = f (dir env)
+  put env { dir = dir' }
 
 move :: (Dir -> Pos -> Pos) -> EventCalc ()
 move f = do
   env <- get
-  let pos' = f (pDir env) (pPos env)
-  put env { pPos = pos' }
+  let pos' = f (dir env) (pos env)
+  if not (outOfBounds (dim (board env)) pos')
+    then put env { pos = pos' }
+    else return ()

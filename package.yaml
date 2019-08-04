@@ -25,6 +25,7 @@ dependencies:
 - mtl
 - gloss
 - matrix
+- free
 
 library:
   source-dirs: src
