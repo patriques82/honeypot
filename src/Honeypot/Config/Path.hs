@@ -5,7 +5,7 @@ module Honeypot.Config.Path
   ( Path
   , go
   , end
-  , evalP
+  , evalPath
   ) where
 
 import           Control.Monad.Free
@@ -28,14 +28,13 @@ end = liftF End
 path :: Path
 path = do
   go (10, 2)
-  go (11, 2)
   end
 
-evalP :: Dim -> Path -> Maybe [Pos]
-evalP dim (Pure ())   = Just []
-evalP dim (Free path) =
+evalPath :: Dim -> Path -> Maybe [Pos]
+evalPath dim (Pure ())   = Just []
+evalPath dim (Free path) =
   case path of
-    Go pos next -> do ps <- evalP dim next
+    Go pos next -> do ps <- evalPath dim next
                       match dim pos ps
     End -> Just []
 

@@ -20,12 +20,12 @@ module Honeypot.Prelude
   , Map
   , traverse
   , filter
-  , fromList
   , member
   , map
   , insert
   , lookup
   , singleton
+  , empty
   , head -- rewrite
   , tail -- rewrite safe
   , last -- rewrite
@@ -58,10 +58,10 @@ import           Data.Functor        (Functor (..), (<$>))
 import           Data.Int            (Int)
 import           Data.List           (find, foldl', head, last, repeat, tail,
                                       zip, (++))
-import           Data.Map            (Map, insert, lookup, singleton)
+import           Data.Map            (Map, empty, insert, lookup, singleton)
 import           Data.Maybe          (Maybe (..))
 import           Data.Semigroup      (Semigroup (..), Sum (..))
-import           Data.Set            (Set (..), filter, fromList, map, member)
+import           Data.Set            (Set (..), filter, map, member)
 import           Data.Traversable    (traverse)
 import           Prelude             (Num (..), Ord (..), Show (..), String,
                                       const, flip, id, subtract, undefined, ($),

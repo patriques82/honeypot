@@ -6,6 +6,7 @@ module Honeypot.Resolver
   ) where
 
 import qualified Control.Monad.State as ST
+import           Data.Set            (fromList)
 import           Honeypot.Extract    (cell, runExt)
 import           Honeypot.Prelude
 import           Honeypot.Types

@@ -1,13 +1,16 @@
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiWayIf                 #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 
 module Honeypot.Config.Env where
 
 import           Control.Monad.Except (Except, MonadError, throwError)
 import           Control.Monad.Reader (MonadReader, ReaderT, ask, runReader)
-import           Data.Matrix          (matrix, setElem)
-import           Honeypot.Config.Path (Path, evalP)
+import qualified Data.Map             as Map (fromList)
+import qualified Data.Matrix          as Matrix (fromList, matrix, setElem)
+import qualified Data.Set             as Set (fromList)
+import           Honeypot.Config.Path (Path, evalPath)
 import           Honeypot.Prelude
 import           Honeypot.Types
 
@@ -20,49 +23,58 @@ data Config a where
   CPlayer  :: Fuel -> Pos -> Dir -> Config Player
   CEnv     :: Config Board -> Config (Set Enemy) -> Config Player -> Config Env
 
-data ConfigError = BlockOutOfBounds
+data ConfigError = BlockOutOfBounds Pos
                  | EnemyPathIsNotStraightLines
                  | NoPointsInEnemyPath
+                 | PlayerOutOfBounds Pos
+                 | NegativePlayerFuel Fuel
 
 newtype ConfigEval a = ConfigEval { runConfEval :: ReaderT Dim (Except ConfigError) a }
   deriving (Functor, Applicative, Monad, MonadReader Dim, MonadError ConfigError)
 
-evalC :: Config a -> ConfigEval a
-evalC (CPlayer fuel pos dir) =
-  return (P fuel pos dir)
-evalC (CBoard ps) = do
-  (y,x) <- ask
-  let init = matrix y x $ \_ -> Nothing
-      f m p = setElem (Just B) p m
-  case find (outOfBounds (y,x)) ps of
-    Just p  -> throwError BlockOutOfBounds
-    Nothing -> return $ Board (y,x) (foldl' f init ps)
-evalC (CEnemies paths) = do
+evalConfig :: Config a -> ConfigEval a
+evalConfig (CPlayer fuel pos dir) = do
   d <- ask
-  case traverse (evalP d) paths of
+  if | outOfBounds d pos -> throwError (PlayerOutOfBounds pos)
+     | fuel < 0          -> throwError (NegativePlayerFuel fuel)
+     | otherwise         -> return (P fuel pos dir)
+evalConfig (CBoard ps) = do
+  (y,x) <- ask
+  let m = Matrix.matrix y x $ \_ -> Nothing
+      f m p = Matrix.setElem (Just B) p m
+  case find (outOfBounds (y,x)) ps of
+    Just p  -> throwError (BlockOutOfBounds p)
+    Nothing -> return $ Board (y,x) (foldl' f m ps)
+evalConfig (CEnemies paths) = do
+  d <- ask
+  case traverse (evalPath d) paths of
     Nothing     -> throwError EnemyPathIsNotStraightLines
-    Just paths' -> fromList <$> traverse evalEnemy paths'
-evalC (CEnv board enemies player) = do
-  b <- evalC board
-  e <- evalC enemies
-  p <- evalC player
+    Just paths' -> Set.fromList <$> traverse evalEnemy paths'
+evalConfig (CEnv board enemies player) = do
+  b <- evalConfig board
+  e <- evalConfig enemies
+  p <- evalConfig player
   return undefined
 
 evalEnemy :: [Pos] -> ConfigEval Enemy
 evalEnemy [] = throwError NoPointsInEnemyPath
 evalEnemy ps@(p:ps') = return (E p Forward f)
   where
-    xs = zip ps ps' -- could be one point
-    x = head xs -- this is always ok by def
-    y = tail xs -- this could error
-    z = last xs -- this could error
-    path' = start x : (move <$> y) ++ [end z]
-    f dir pos = undefined
+    f = undefined
+
+pathEvents :: [(Pos, Pos)] -> Map Pos PathEvent
+pathEvents []   = empty
+pathEvents [pp] = Map.fromList [start pp, end pp]
+pathEvents pps  = Map.fromList $ start x : (move <$> y) ++ [end z]
+  where
+    x = head pps
+    y = tail pps
+    z = last pps
 
 start, move, end :: (Pos, Pos) -> (Pos, PathEvent)
 start ps@(p,_) = (p, Start (pathDir' ps))
 move ps@(p,_) = (p, Move (pathDir' ps))
-end ps@(p,_) = (p, End (pathDir' ps))
+end ps@(_,p) = (p, End (pathDir' ps))
 
 pathDir' :: (Pos, Pos) -> Dir
 pathDir' ((y1,x1), (y2,x2))
