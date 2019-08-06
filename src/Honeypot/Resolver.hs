@@ -6,7 +6,6 @@ module Honeypot.Resolver
   ) where
 
 import qualified Control.Monad.State as ST
-import           Data.Set            (fromList)
 import           Honeypot.Extract    (cell, runExt)
 import           Honeypot.Prelude
 import           Honeypot.Types
@@ -35,12 +34,7 @@ exec e = do
 execEnemies :: EventCalc ()
 execEnemies = do
   env <- get
-  let shift (E pos dir ev) =
-        case ev dir pos of
-          Start d -> undefined
-          Move d  -> E (forward d pos) dir ev
-          End d   -> E pos (toggle dir) ev
-      es' = map shift (enemies env)
+  let es' = shift <$> (enemies env)
   put env { enemies = es' }
 
 -- Player event
@@ -86,8 +80,8 @@ shoot = do
 removeEnemies :: EventCalc ()
 removeEnemies = do
   env@(Env board es dir pos _) <- get
-  let view = fromList $ playerView dir pos (dim board)
-      pred e = member (pathPos e) view
+  let view = playerView dir pos (dim board)
+      pred e = any (== (current e)) view
   put env { enemies = filter pred es }
 
 adjustFuel :: (Int -> Int) -> EventCalc ()

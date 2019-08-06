@@ -52,29 +52,15 @@ data Event = TurnLeft     -- 1 fuel
            | MoveBackward -- 1 fuel
            | Shoot        -- 5 fuel
 
-
-data PathDir = Forward | Backward
-  deriving Eq
-
-toggle :: PathDir -> PathDir
-toggle Forward  = Backward
-toggle Backward = Forward
-
-data PathEvent = Start Dir
-               | Move Dir
-               | End Dir
-
-data Enemy = E { pathPos   :: Pos
-               , pathDir   :: PathDir
-               , pathEvent :: PathDir -> Pos -> PathEvent
+data Enemy = E { future  :: [Pos]
+               , current :: Pos
+               , past    :: [Pos]
                }
 
-
-instance Eq Enemy where
-  (E p1 d1 _) == (E p2 d2 _) = p1 == p2 && d1 == d2
-
-instance Ord Enemy where
-  (E p1 _ _) <= (E p2 _ _) = p1 <= p2
+shift :: Enemy -> Enemy
+shift (E [] p [])     = E [] p []
+shift (E [] p (y:ys)) = E ys y [p]
+shift (E (x:xs) p ys) = E xs x (p:ys)
 
 data Block = B
 
@@ -92,7 +78,7 @@ data Board = Board { dim     :: Dim
                    }
 
 data Env = Env { board   :: Board
-               , enemies :: Set Enemy
+               , enemies :: [Enemy]
                , dir     :: Dir
                , pos     :: Pos
                , fuel    :: Fuel
@@ -101,13 +87,13 @@ data Env = Env { board   :: Board
 playerView :: Dir -> Pos -> Dim -> [Pos]
 playerView dir (y,x) dim =
   case dir of
-    West  -> go (y,x-1)
-    North -> go (y-1,x)
-    East  -> go (y,x+1)
-    South -> go (y+1,x)
-  where go p = if not (outOfBounds dim p)
-                  then p:playerView dir p dim
-                  else []
+    West  -> f (y,x-1)
+    North -> f (y-1,x)
+    East  -> f (y,x+1)
+    South -> f (y+1,x)
+  where f p = if not (outOfBounds dim p)
+                 then p:playerView dir p dim
+                 else []
 
 newtype Step a = Step (Reader Env a) -- hide constructor on export
   deriving (Functor, Applicative, Monad, MonadReader Env)

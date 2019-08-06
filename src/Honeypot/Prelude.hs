@@ -10,25 +10,18 @@ module Honeypot.Prelude
   , Maybe (..)
   , Either (..)
   , Show (..)
-  , Set (..)
   , Num (..)
   , Ord (..)
   , Sum (..)
   , String
   , Int
   , IO
-  , Map
   , traverse
+  , any
   , filter
-  , member
-  , map
-  , insert
-  , lookup
-  , singleton
-  , empty
-  , head -- rewrite
-  , tail -- rewrite safe
-  , last -- rewrite
+  , head
+  , tail
+  , last
   , zip
   , foldl'
   , repeat
@@ -56,12 +49,10 @@ import           Data.Either         (Either (..))
 import           Data.Eq             (Eq (..))
 import           Data.Functor        (Functor (..), (<$>))
 import           Data.Int            (Int)
-import           Data.List           (find, foldl', head, last, repeat, tail,
-                                      zip, (++))
-import           Data.Map            (Map, empty, insert, lookup, singleton)
+import           Data.List           (any, filter, find, foldl', head, last,
+                                      repeat, tail, zip, (++))
 import           Data.Maybe          (Maybe (..))
 import           Data.Semigroup      (Semigroup (..), Sum (..))
-import           Data.Set            (Set (..), filter, map, member)
 import           Data.Traversable    (traverse)
 import           Prelude             (Num (..), Ord (..), Show (..), String,
                                       const, flip, id, subtract, undefined, ($),

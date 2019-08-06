@@ -33,7 +33,7 @@ instance Monad Extract where
 
 cell :: Extract Cell
 cell = Ext $ \p e ->
-  let enemy = const Enemy <$> find ((==) p . pathPos) (enemies e)
+  let enemy = const Enemy <$> find ((==) p . current) (enemies e)
       block = const Block <$> terrain (board e) ! p
       cell = enemy <> block
    in if outOfBounds (dim (board e)) p
