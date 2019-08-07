@@ -21,14 +21,15 @@ description:         Please see the README on GitHub at <https://github.com/patr
 
 dependencies:
 - base >= 4.7 && < 5
-- containers
-- mtl
-- gloss
-- matrix
-- free
 
 library:
   source-dirs: src
+  dependencies:
+  - containers
+  - mtl
+  - gloss
+  - matrix
+  - free
 
 executables:
   honeypot-exe:
