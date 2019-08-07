@@ -42,8 +42,8 @@ evalConfig (CPlayer fuel pos dir) = do
      | otherwise         -> return (P fuel pos dir)
 evalConfig (CBoard ps) = do
   (y,x) <- ask
-  let m = matrix y x $ \_ -> Nothing
-      f m p = setElem (Just B) p m
+  let m = matrix y x $ \_ -> False
+      f m p = setElem True p m
   case find (outOfBounds (y,x)) ps of
     Just p  -> throwError (BlockOutOfBounds p)
     Nothing -> return $ Board (y,x) (foldl' f m ps)

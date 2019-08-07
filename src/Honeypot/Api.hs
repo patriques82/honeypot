@@ -1,6 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
--- This module should be the only public
 module Honeypot.Api
   ( identifyTarget
   , lidarBack
@@ -12,21 +11,16 @@ module Honeypot.Api
   , Step
   , Event (..)
   , Cell (..)
-  , Dir (..)
-  , Pos
-  , Dim
   , Fuel
   , Env
   ) where
 
-import           Data.Monoid       (Sum (..))
-import           Data.Semigroup
 import           Honeypot.Extract
 import           Honeypot.Prelude
 import           Honeypot.Resolver
 import           Honeypot.Types
 
-currentFuel :: Step Int
+currentFuel :: Step Fuel
 currentFuel = fuel <$> env
 
 -- Identify obstacle in front

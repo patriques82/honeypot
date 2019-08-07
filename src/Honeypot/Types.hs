@@ -53,16 +53,14 @@ data Event = TurnLeft     -- 1 fuel
            | Shoot        -- 5 fuel
 
 data Enemy = E { future  :: [Pos]
-               , current :: Pos
+               , current :: !Pos
                , past    :: [Pos]
                }
 
 shift :: Enemy -> Enemy
-shift (E [] p [])     = E [] p []
+shift e@(E [] p [])   = e
 shift (E [] p (y:ys)) = E ys y [p]
 shift (E (x:xs) p ys) = E xs x (p:ys)
-
-data Block = B
 
 data Cell = Empty
           | Wall
@@ -74,7 +72,7 @@ instance Semigroup Cell where
   y     <> _ = y
 
 data Board = Board { dim     :: Dim
-                   , terrain :: Matrix (Maybe Block)
+                   , terrain :: Matrix Bool
                    }
 
 data Env = Env { board   :: Board

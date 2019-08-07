@@ -16,29 +16,30 @@ module Honeypot.Prelude
   , String
   , Int
   , IO
-  , traverse
-  , any
-  , filter
-  , head
-  , tail
-  , last
-  , zip
-  , foldl'
-  , repeat
-  , (++)
-  , undefined
-  , otherwise
-  , const
-  , id
-  , subtract
-  , flip
-  , find
   , (<$>)
   , ($)
   , (.)
   , (||)
   , (&&)
+  , (++)
+  , any
+  , bool
+  , const
+  , filter
+  , find
+  , flip
+  , foldl'
+  , head
+  , id
+  , last
   , not
+  , otherwise
+  , repeat
+  , subtract
+  , tail
+  , traverse
+  , undefined
+  , zip
   ) where
 
 import           Control.Applicative (Applicative (..))

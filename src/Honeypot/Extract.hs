@@ -34,11 +34,10 @@ instance Monad Extract where
 cell :: Extract Cell
 cell = Ext $ \p e ->
   let enemy = const Enemy <$> find ((==) p . current) (enemies e)
-      block = const Block <$> terrain (board e) ! p
-      cell = enemy <> block
+      block = bool Nothing (Just Block) (terrain (board e) ! p)
    in if outOfBounds (dim (board e)) p
          then Wall
-         else case cell of
+         else case enemy <> block of
                 Nothing -> Empty
                 Just x  -> x
 

@@ -26,11 +26,14 @@ main = simulate
     simulationRate :: Int
     simulationRate = 20
 
+    -- config
     initEnv :: Env
     initEnv = undefined
 
+    -- bulk of work
     draw :: Env -> Picture
     draw = undefined
 
+    -- resolve and apply player step
     update :: ViewPort -> Float -> Env -> Env
     update _ _ = undefined --snd . runStep computerStep
