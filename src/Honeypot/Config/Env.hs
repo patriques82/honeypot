@@ -5,12 +5,12 @@
 
 module Honeypot.Config.Env
   ( Config (..)
-  , ConfigEval
-  , evalConfig
+  , runConfig
   ) where
 
-import           Control.Monad.Except (Except, MonadError, throwError)
-import           Control.Monad.Reader (MonadReader, ReaderT, ask, runReader)
+import           Control.Monad.Except (Except, MonadError, runExcept,
+                                       throwError)
+import           Control.Monad.Reader (MonadReader, ReaderT, ask, runReaderT)
 import           Data.Matrix          (fromList, matrix, setElem)
 import           Honeypot.Config.Path (Path, evalPath)
 import           Honeypot.Prelude
@@ -30,6 +30,9 @@ data ConfigError = BlockOutOfBounds Pos
 
 newtype ConfigEval a = ConfigEval { runConfEval :: ReaderT Dim (Except ConfigError) a }
   deriving (Functor, Applicative, Monad, MonadReader Dim, MonadError ConfigError)
+
+runConfig :: Dim -> Config a -> Either ConfigError a
+runConfig dim conf = runExcept (runReaderT (runConfEval (evalConfig conf)) dim)
 
 evalConfig :: Config a -> ConfigEval a
 evalConfig (CPlayer dir pos fuel) = do
