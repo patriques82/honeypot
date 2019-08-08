@@ -16,13 +16,10 @@ import           Honeypot.Config.Path (Path, evalPath)
 import           Honeypot.Prelude
 import           Honeypot.Types
 
--- TODO this should go in Env
-data Player = P Fuel Pos Dir
-
 data Config a where
   CBoard   :: [Pos] -> Config Board
   CEnemies :: [Path] -> Config [Enemy]
-  CPlayer  :: Fuel -> Pos -> Dir -> Config Player
+  CPlayer  :: Dir -> Pos -> Fuel -> Config Player
   CEnv     :: Config Board -> Config [Enemy] -> Config Player -> Config Env
 
 data ConfigError = BlockOutOfBounds Pos
@@ -35,11 +32,11 @@ newtype ConfigEval a = ConfigEval { runConfEval :: ReaderT Dim (Except ConfigErr
   deriving (Functor, Applicative, Monad, MonadReader Dim, MonadError ConfigError)
 
 evalConfig :: Config a -> ConfigEval a
-evalConfig (CPlayer fuel pos dir) = do
+evalConfig (CPlayer dir pos fuel) = do
   d <- ask
   if | outOfBounds d pos -> throwError (PlayerOutOfBounds pos)
      | fuel < 0          -> throwError (NegativePlayerFuel fuel)
-     | otherwise         -> return (P fuel pos dir)
+     | otherwise         -> return (Player dir pos fuel)
 evalConfig (CBoard ps) = do
   (y,x) <- ask
   let m = matrix y x $ \_ -> False
@@ -52,11 +49,8 @@ evalConfig (CEnemies paths) = do
   case traverse (evalPath d) paths of
     Nothing     -> throwError EnemyPathIsNotStraightLines
     Just paths' -> traverse evalEnemy paths'
-evalConfig (CEnv board enemies player) = do
-  b <- evalConfig board
-  e <- evalConfig enemies
-  p <- evalConfig player
-  return undefined
+evalConfig (CEnv board enemies player) =
+  Env <$> evalConfig board <*> evalConfig enemies <*> evalConfig player
 
 evalEnemy :: [Pos] -> ConfigEval Enemy
 evalEnemy [] = throwError NoPointsInEnemyPath

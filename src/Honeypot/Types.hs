@@ -1,11 +1,14 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE Rank2Types                 #-}
+{-# LANGUAGE TemplateHaskell            #-}
 
 module Honeypot.Types where
 
 import           Control.Monad.Reader (MonadReader, Reader, ask, runReader)
-import           Data.Matrix
+import           Data.Matrix          (Matrix)
 import           Honeypot.Prelude
+import           Lens.Simple          (makeLenses)
 
 type Pos = (Int, Int) -- row, col, index starts at 1,1
 
@@ -42,6 +45,7 @@ left East  = North
 left North = West
 left South = East
 
+-- TODO replace with maybe lookup in matrix
 outOfBounds :: Dim -> Pos -> Bool
 outOfBounds (yy,xx) (y,x) =
   x > xx || x < 1 || y > yy || y < 1
@@ -71,27 +75,31 @@ instance Semigroup Cell where
   Empty <> x = x
   y     <> _ = y
 
-data Board = Board { dim     :: Dim
-                   , terrain :: Matrix Bool
+data Board = Board { _dim     :: Dim
+                   , _terrain :: Matrix Bool
                    }
 
-data Env = Env { board   :: Board
-               , enemies :: [Enemy]
-               , dir     :: Dir
-               , pos     :: Pos
-               , fuel    :: Fuel
+$(makeLenses ''Board)
+
+data Player = Player { _dir  :: Dir
+                     , _pos  :: Pos
+                     , _fuel :: Fuel
+                     }
+
+$(makeLenses ''Player)
+
+playerView :: Player -> Dim -> [Pos]
+playerView (Player dir p _ ) dim = go (forward dir p) dim
+  where go p' dim = if not (outOfBounds dim p')
+                       then p':go (forward dir p') dim
+                       else []
+
+data Env = Env { _board   :: Board
+               , _enemies :: [Enemy]
+               , _player  :: Player
                }
 
-playerView :: Dir -> Pos -> Dim -> [Pos]
-playerView dir (y,x) dim =
-  case dir of
-    West  -> f (y,x-1)
-    North -> f (y-1,x)
-    East  -> f (y,x+1)
-    South -> f (y+1,x)
-  where f p = if not (outOfBounds dim p)
-                 then p:playerView dir p dim
-                 else []
+$(makeLenses ''Env)
 
 newtype Step a = Step (Reader Env a) -- hide constructor on export
   deriving (Functor, Applicative, Monad, MonadReader Env)

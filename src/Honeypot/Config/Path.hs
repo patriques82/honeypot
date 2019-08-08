@@ -8,7 +8,7 @@ module Honeypot.Config.Path
   , evalPath
   ) where
 
-import           Control.Monad.Free
+import           Control.Monad.Free (Free (..), liftF)
 import           Honeypot.Prelude
 import           Honeypot.Types     (Dim, Pos, outOfBounds)
 

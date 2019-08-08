@@ -27,9 +27,9 @@ library:
   dependencies:
   - containers
   - mtl
-  - gloss
   - matrix
   - free
+  - lens-simple
 
 executables:
   honeypot-exe:

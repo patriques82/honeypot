@@ -13,9 +13,10 @@ module Honeypot.Extract
   , notEmpty
   ) where
 
-import           Data.Matrix
+import           Data.Matrix      ((!))
 import           Honeypot.Prelude
 import           Honeypot.Types
+import           Lens.Simple      ((^.))
 
 newtype Extract a = Ext { runExt :: Pos -> Env -> a }
 
@@ -33,9 +34,9 @@ instance Monad Extract where
 
 cell :: Extract Cell
 cell = Ext $ \p e ->
-  let enemy = const Enemy <$> find ((==) p . current) (enemies e)
-      block = bool Nothing (Just Block) (terrain (board e) ! p)
-   in if outOfBounds (dim (board e)) p
+  let enemy = const Enemy <$> find ((==) p . current) (e ^. enemies)
+      block = bool Nothing (Just Block) ((e ^. board . terrain) ! p)
+   in if outOfBounds (e ^. board . dim) p
          then Wall
          else case enemy <> block of
                 Nothing -> Empty

@@ -9,6 +9,7 @@ import qualified Control.Monad.State as ST
 import           Honeypot.Extract    (cell, runExt)
 import           Honeypot.Prelude
 import           Honeypot.Types
+import           Lens.Simple         ((&), (.~), (^.))
 
 newtype EventCalc a = EventCalc { runCalc :: ST.StateT Env Maybe a }
   deriving (Functor, Applicative, Monad, ST.MonadState Env)
@@ -34,8 +35,8 @@ exec e = do
 execEnemies :: EventCalc ()
 execEnemies = do
   env <- get
-  let es' = shift <$> (enemies env)
-  put env { enemies = es' }
+  let es' = shift <$> (env ^. enemies)
+  put (env & enemies .~ es')
 
 -- Player event
 execPlayer :: Event -> EventCalc ()
@@ -52,7 +53,7 @@ execPlayer e = do
 calculateCollisions :: EventCalc ()
 calculateCollisions = do
   env <- get
-  case runExt cell (pos env) env of
+  case runExt cell (env ^. player . pos) env of
     Empty -> return ()
     _     -> adjustFuel (subtract 10) -- wall, block or enemy
 
@@ -79,29 +80,30 @@ shoot = do
 
 removeEnemies :: EventCalc ()
 removeEnemies = do
-  env@(Env board es dir pos _) <- get
-  let view = playerView dir pos (dim board)
+  env@(Env board es player) <- get
+  let view = playerView player (_dim board)
       pred e = any (== (current e)) view
-  put env { enemies = filter pred es }
+  put (env & enemies .~ filter pred es)
 
 adjustFuel :: (Int -> Int) -> EventCalc ()
 adjustFuel f = do
   env <- get
-  let fuel' = f (fuel env)
+  let fuel' = f (env ^. player . fuel)
   if fuel' < 0
      then lift Nothing -- end game
-     else put env { fuel = fuel' }
+     else put (env & player . fuel .~ fuel')
 
 turn :: (Dir -> Dir) -> EventCalc ()
 turn f = do
   env <- get
-  let dir' = f (dir env)
-  put env { dir = dir' }
+  let dir' = f (env ^. player . dir)
+  put (env & player . dir .~ dir')
 
 move :: (Dir -> Pos -> Pos) -> EventCalc ()
 move f = do
   env <- get
-  let pos' = f (dir env) (pos env)
-  if not (outOfBounds (dim (board env)) pos')
-    then put env { pos = pos' }
+  let pos' = f (env ^. player . dir) (env ^. player . pos)
+  if not (outOfBounds (env ^. board . dim) pos')
+    then put (env & player . pos .~ pos')
     else return ()
+
