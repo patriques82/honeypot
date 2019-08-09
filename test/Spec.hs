@@ -1,2 +1,10 @@
+import           Test.Tasty
+import           Test.Tasty.QuickCheck
+
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = defaultMain $
+  testGroup "Tests" []
+
+env = undefined
+
+path = undefined

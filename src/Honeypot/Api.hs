@@ -22,10 +22,7 @@ import           Honeypot.Types
 import           Lens.Simple       ((&), (.~), (^.))
 
 currentFuel :: Step Fuel
-currentFuel = do
-  e <- env
-  return (e ^. player . fuel)
-
+currentFuel = withEnv (\e -> e ^. player . fuel)
 
 -- Identify obstacle in front
 identifyTarget :: Step Cell

@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 
@@ -9,7 +10,7 @@ import qualified Control.Monad.State as ST
 import           Honeypot.Extract    (cell, runExt)
 import           Honeypot.Prelude
 import           Honeypot.Types
-import           Lens.Simple         ((&), (.~), (^.))
+import           Lens.Simple         ((%~), (&), (.~), (^.))
 
 newtype EventCalc a = EventCalc { runCalc :: ST.StateT Env Maybe a }
   deriving (Functor, Applicative, Monad, ST.MonadState Env)
@@ -23,6 +24,9 @@ put = ST.put
 get :: EventCalc Env
 get = ST.get
 
+modify :: (Env -> Env) -> EventCalc ()
+modify = ST.modify
+
 resolve :: Env -> Event -> Maybe Env
 resolve env event =
   ST.execStateT (runCalc (exec event)) env
@@ -35,7 +39,7 @@ exec e = do
 execEnemies :: EventCalc ()
 execEnemies = do
   env <- get
-  let es' = shift <$> (env ^. enemies)
+  let !es' = shift <$> (env ^. enemies)
   put (env & enemies .~ es')
 
 -- Player event
@@ -80,30 +84,26 @@ shoot = do
 
 removeEnemies :: EventCalc ()
 removeEnemies = do
-  env@(Env board es player) <- get
-  let view = playerView player (_dim board)
+  env@(Env terrain enemies' player) <- get
+  let !view = playerView terrain player
       pred e = any (== (current e)) view
-  put (env & enemies .~ filter pred es)
+  put (env & enemies .~ filter pred enemies')
 
 adjustFuel :: (Int -> Int) -> EventCalc ()
 adjustFuel f = do
   env <- get
-  let fuel' = f (env ^. player . fuel)
+  let !fuel' = f (env ^. player . fuel)
   if fuel' < 0
      then lift Nothing -- end game
      else put (env & player . fuel .~ fuel')
 
 turn :: (Dir -> Dir) -> EventCalc ()
-turn f = do
-  env <- get
-  let dir' = f (env ^. player . dir)
-  put (env & player . dir .~ dir')
+turn f = modify (\env -> env & player . dir %~ f)
 
 move :: (Dir -> Pos -> Pos) -> EventCalc ()
 move f = do
   env <- get
-  let pos' = f (env ^. player . dir) (env ^. player . pos)
-  if not (outOfBounds (env ^. board . dim) pos')
-    then put (env & player . pos .~ pos')
-    else return ()
-
+  let !pos' = f (env ^. player . dir) (env ^. player . pos)
+  case (env ^. terrain) !? pos' of
+    Nothing -> return ()
+    _       -> put (env & player . pos .~ pos')

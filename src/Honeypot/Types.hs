@@ -5,8 +5,9 @@
 
 module Honeypot.Types where
 
-import           Control.Monad.Reader (MonadReader, Reader, ask, runReader)
-import           Data.Matrix          (Matrix)
+import           Control.Monad.Reader (MonadReader, Reader, ask, asks,
+                                       runReader)
+import           Data.Matrix          (Matrix, safeGet)
 import           Honeypot.Prelude
 import           Lens.Simple          (makeLenses)
 
@@ -45,10 +46,6 @@ left East  = North
 left North = West
 left South = East
 
--- TODO replace with maybe lookup in matrix
-outOfBounds :: Dim -> Pos -> Bool
-outOfBounds (yy,xx) (y,x) =
-  x > xx || x < 1 || y > yy || y < 1
 
 data Event = TurnLeft     -- 1 fuel
            | TurnRight    -- 1 fuel
@@ -75,31 +72,29 @@ instance Semigroup Cell where
   Empty <> x = x
   y     <> _ = y
 
-data Board = Board { _dim     :: Dim
-                   , _terrain :: Matrix Bool
-                   }
-
-$(makeLenses ''Board)
-
-data Player = Player { _dir  :: Dir
-                     , _pos  :: Pos
-                     , _fuel :: Fuel
+data Player = Player { _dir  :: !Dir
+                     , _pos  :: !Pos
+                     , _fuel :: !Fuel
                      }
 
 $(makeLenses ''Player)
 
-playerView :: Player -> Dim -> [Pos]
-playerView (Player dir p _ ) dim = go (forward dir p) dim
-  where go p' dim = if not (outOfBounds dim p')
-                       then p':go (forward dir p') dim
-                       else []
+playerView :: Matrix a -> Player -> [Pos]
+playerView m (Player dir p _) = go (forward dir p)
+  where go (y,x) = case safeGet y x m of
+                     Nothing -> []
+                     Just _  -> (y,x) : go (forward dir (y,x))
 
-data Env = Env { _board   :: Board
+
+data Env = Env { _terrain :: Matrix Bool
                , _enemies :: [Enemy]
-               , _player  :: Player
+               , _player  :: !Player
                }
 
 $(makeLenses ''Env)
+
+(!?) :: Matrix a -> Pos -> Maybe a
+m !? (y,x) = safeGet y x m
 
 newtype Step a = Step (Reader Env a) -- hide constructor on export
   deriving (Functor, Applicative, Monad, MonadReader Env)
@@ -109,3 +104,6 @@ runStep (Step step) = runReader step
 
 env :: Step Env
 env = Step ask
+
+withEnv :: (Env -> a) -> Step a
+withEnv = Step . asks

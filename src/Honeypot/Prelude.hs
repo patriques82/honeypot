@@ -18,6 +18,7 @@ module Honeypot.Prelude
   , IO
   , (<$>)
   , ($)
+  , ($!)
   , (.)
   , (||)
   , (&&)
@@ -57,5 +58,5 @@ import           Data.Semigroup      (Semigroup (..), Sum (..))
 import           Data.Traversable    (traverse)
 import           Prelude             (Num (..), Ord (..), Show (..), String,
                                       const, flip, id, subtract, undefined, ($),
-                                      (.))
+                                      ($!), (.))
 import           System.IO           (IO)

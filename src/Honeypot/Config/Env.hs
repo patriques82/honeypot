@@ -11,16 +11,17 @@ module Honeypot.Config.Env
 import           Control.Monad.Except (Except, MonadError, runExcept,
                                        throwError)
 import           Control.Monad.Reader (MonadReader, ReaderT, ask, runReaderT)
-import           Data.Matrix          (fromList, matrix, setElem)
+import           Data.Matrix          (Matrix, fromList, matrix, setElem)
 import           Honeypot.Config.Path (Path, evalPath)
+import           Honeypot.Config.Util
 import           Honeypot.Prelude
 import           Honeypot.Types
 
 data Config a where
-  CBoard   :: [Pos] -> Config Board
+  CBoard   :: [Pos] -> Config (Matrix Bool)
   CEnemies :: [Path] -> Config [Enemy]
   CPlayer  :: Dir -> Pos -> Fuel -> Config Player
-  CEnv     :: Config Board -> Config [Enemy] -> Config Player -> Config Env
+  CEnv     :: Config (Matrix Bool) -> Config [Enemy] -> Config Player -> Config Env
 
 data ConfigError = BlockOutOfBounds Pos
                  | EnemyPathIsNotStraightLines
@@ -46,7 +47,7 @@ evalConfig (CBoard ps) = do
       f m p = setElem True p m
   case find (outOfBounds (y,x)) ps of
     Just p  -> throwError (BlockOutOfBounds p)
-    Nothing -> return $ Board (y,x) (foldl' f m ps)
+    Nothing -> return (foldl' f m ps)
 evalConfig (CEnemies paths) = do
   d <- ask
   case traverse (evalPath d) paths of

@@ -8,9 +8,10 @@ module Honeypot.Config.Path
   , evalPath
   ) where
 
-import           Control.Monad.Free (Free (..), liftF)
+import           Control.Monad.Free   (Free (..), liftF)
+import           Honeypot.Config.Util
 import           Honeypot.Prelude
-import           Honeypot.Types     (Dim, Pos, outOfBounds)
+import           Honeypot.Types
 
 data Walk next = Go Pos next
                | End
