@@ -34,32 +34,31 @@ instance Monad Extract where
     runExt (f (x p e)) p e
 
 cell :: Extract Cell
-cell = Ext $ \p e ->
+cell = Ext $ \p@(P y x) e ->
   let es = e ^. enemies
       !ts = e ^. terrain
       enemy = const Enemy <$> find ((==) p . current) es
-      block = bool Nothing (Just Block) (ts ! p)
+      block = bool Nothing (Just Block) (ts ! (y,x))
    in case ts !? p of
         Nothing -> Wall
         _ -> case enemy <> block of
                Nothing -> Empty
                Just x  -> x
 
+shift :: Extract a -> (Pos -> Pos) -> Extract a
+shift (Ext f) g = Ext $ \p e -> f (g p) e
+
 upE :: Extract a -> Extract a
-upE (Ext f) = Ext $ \(y,x) e ->
-  f (y-1,x) e
+upE ext = shift ext (forward North)
 
 downE :: Extract a -> Extract a
-downE (Ext f) = Ext $ \(y,x) e ->
-  f (y+1,x) e
+downE ext = shift ext (forward South)
 
 leftE :: Extract a -> Extract a
-leftE (Ext f) = Ext $ \(y,x) e ->
-  f (y,x-1) e
+leftE ext = shift ext (forward West)
 
 rightE :: Extract a -> Extract a
-rightE (Ext f) = Ext $ \(y,x) e ->
-  f (y,x+1) e
+rightE ext = shift ext (forward East)
 
 until :: Semigroup a => (Cell -> Bool) -> Extract a -> (Extract a -> Extract a) -> Extract a
 until pred ext trans = do

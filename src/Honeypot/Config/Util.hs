@@ -4,5 +4,5 @@ import           Honeypot.Prelude
 import           Honeypot.Types
 
 outOfBounds :: Dim -> Pos -> Bool
-outOfBounds (yy,xx) (y,x) =
+outOfBounds (P yy xx) (P y x) =
   x > xx || x < 1 || y > yy || y < 1

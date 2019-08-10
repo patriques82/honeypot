@@ -6,6 +6,7 @@ module Honeypot.Api
   , lidarFront
   , lidarLeft
   , lidarRight
+  , (|~)
   , frames
   -- reexported types
   , Step
@@ -79,9 +80,11 @@ lidarRight = do
 playerStep :: Step Event
 playerStep = undefined
 
+(|~) :: Env -> Step Event -> Maybe Env
+env |~ step = resolve env (step `runStep` env)
+
 frames :: Step Event -> Env -> [Env]
-frames player env =
-  let playerEv = player `runStep` env
-  in case resolve env playerEv of
-    Just env' -> env' : frames player env'
+frames playerStep env =
+  case env |~ playerStep of
+    Just env' -> env' : frames playerStep env'
     Nothing   -> []

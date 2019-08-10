@@ -39,7 +39,7 @@ exec e = do
 execEnemies :: EventCalc ()
 execEnemies = do
   env <- get
-  let !es' = shift <$> (env ^. enemies)
+  let !es' = step <$> (env ^. enemies)
   put (env & enemies .~ es')
 
 -- Player event
@@ -50,6 +50,7 @@ execPlayer e = do
     TurnRight    -> turnRight    -- 1 fuel
     MoveForward  -> moveForward  -- 1 fuel
     MoveBackward -> moveBackward -- 1 fuel
+    Noop         -> noop         -- 1 fuel
     Shoot        -> shoot        -- 5 fuel
   calculateCollisions            -- 10 fuel
 
@@ -61,7 +62,7 @@ calculateCollisions = do
     Empty -> return ()
     _     -> adjustFuel (subtract 10) -- wall, block or enemy
 
-turnLeft, turnRight, moveForward, moveBackward, shoot :: EventCalc ()
+turnLeft, turnRight, moveForward, moveBackward, noop, shoot :: EventCalc ()
 turnLeft = do
   adjustFuel (subtract 1)
   turn left
@@ -77,6 +78,8 @@ moveForward = do
 moveBackward = do
   adjustFuel (subtract 1)
   move backward
+
+noop = adjustFuel (subtract 1)
 
 shoot = do
   adjustFuel (subtract 5)
@@ -94,7 +97,7 @@ adjustFuel f = do
   env <- get
   let !fuel' = f (env ^. player . fuel)
   if fuel' < 0
-     then lift Nothing -- end game
+     then lift Nothing -- end game >TODO (Either?)
      else put (env & player . fuel .~ fuel')
 
 turn :: (Dir -> Dir) -> EventCalc ()

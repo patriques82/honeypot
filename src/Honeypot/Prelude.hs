@@ -41,6 +41,7 @@ module Honeypot.Prelude
   , traverse
   , undefined
   , zip
+  , zipWith
   ) where
 
 import           Control.Applicative (Applicative (..))
@@ -52,7 +53,7 @@ import           Data.Eq             (Eq (..))
 import           Data.Functor        (Functor (..), (<$>))
 import           Data.Int            (Int)
 import           Data.List           (any, filter, find, foldl', head, last,
-                                      repeat, tail, zip, (++))
+                                      repeat, tail, zip, zipWith, (++))
 import           Data.Maybe          (Maybe (..))
 import           Data.Semigroup      (Semigroup (..), Sum (..))
 import           Data.Traversable    (traverse)

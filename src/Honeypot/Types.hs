@@ -11,7 +11,8 @@ import           Data.Matrix          (Matrix, safeGet)
 import           Honeypot.Prelude
 import           Lens.Simple          (makeLenses)
 
-type Pos = (Int, Int) -- row, col, index starts at 1,1
+data Pos = P !Int !Int -- row, col, index starts at 1,1
+  deriving Eq
 
 type Dim = Pos
 
@@ -23,16 +24,16 @@ data Dir = West
          | South
 
 forward :: Dir -> Pos -> Pos
-forward West (y,x)  = (y,x-1)
-forward East (y,x)  = (y,x+1)
-forward North (y,x) = (y-1,x)
-forward South (y,x) = (y+1,x)
+forward West (P y x)  = P y (x-1)
+forward East (P y x)  = P y (x+1)
+forward North (P y x) = P (y-1) x
+forward South (P y x) = P (y+1) x
 
 backward :: Dir -> Pos -> Pos
-backward West (y,x)  = (y,x+1)
-backward East (y,x)  = (y,x-1)
-backward North (y,x) = (y+1,x)
-backward South (y,x) = (y-1,x)
+backward West (P y x)  = P y (x+1)
+backward East (P y x)  = P y (x-1)
+backward North (P y x) = P (y+1) x
+backward South (P y x) = P (y-1) x
 
 right :: Dir -> Dir
 right West  = North
@@ -51,17 +52,18 @@ data Event = TurnLeft     -- 1 fuel
            | TurnRight    -- 1 fuel
            | MoveForward  -- 1 fuel
            | MoveBackward -- 1 fuel
+           | Noop         -- 1 fuel
            | Shoot        -- 5 fuel
 
-data Enemy = E { future  :: [Pos]
+data Enemy = E { future  :: ![Pos]
                , current :: !Pos
-               , past    :: [Pos]
+               , past    :: ![Pos]
                }
 
-shift :: Enemy -> Enemy
-shift e@(E [] p [])   = e
-shift (E [] p (y:ys)) = E ys y [p]
-shift (E (x:xs) p ys) = E xs x (p:ys)
+step :: Enemy -> Enemy
+step e@(E [] p [])   = e
+step (E [] p (y:ys)) = E ys y [p]
+step (E (x:xs) p ys) = E xs x (p:ys)
 
 data Cell = Empty
           | Wall
@@ -81,9 +83,9 @@ $(makeLenses ''Player)
 
 playerView :: Matrix a -> Player -> [Pos]
 playerView m (Player dir p _) = go (forward dir p)
-  where go (y,x) = case safeGet y x m of
-                     Nothing -> []
-                     Just _  -> (y,x) : go (forward dir (y,x))
+  where go p@(P y x) = case safeGet y x m of
+                       Nothing -> []
+                       Just _  -> p : go (forward dir p)
 
 
 data Env = Env { _terrain :: Matrix Bool
@@ -94,7 +96,7 @@ data Env = Env { _terrain :: Matrix Bool
 $(makeLenses ''Env)
 
 (!?) :: Matrix a -> Pos -> Maybe a
-m !? (y,x) = safeGet y x m
+m !? (P y x) = safeGet y x m
 
 newtype Step a = Step (Reader Env a) -- hide constructor on export
   deriving (Functor, Applicative, Monad, MonadReader Env)

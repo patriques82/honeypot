@@ -42,10 +42,10 @@ evalConfig (CPlayer dir pos fuel) = do
      | fuel < 0          -> throwError (NegativePlayerFuel fuel)
      | otherwise         -> return (Player dir pos fuel)
 evalConfig (CBoard ps) = do
-  (y,x) <- ask
+  (P y x) <- ask
   let m = matrix y x $ \_ -> False
-      f m p = setElem True p m
-  case find (outOfBounds (y,x)) ps of
+      f m (P y x) = setElem True (y,x) m
+  case find (outOfBounds (P y x)) ps of
     Just p  -> throwError (BlockOutOfBounds p)
     Nothing -> return (foldl' f m ps)
 evalConfig (CEnemies paths) = do
