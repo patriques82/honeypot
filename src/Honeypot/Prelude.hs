@@ -34,6 +34,7 @@ module Honeypot.Prelude
   , id
   , last
   , not
+  , null
   , otherwise
   , repeat
   , subtract
@@ -53,7 +54,7 @@ import           Data.Eq             (Eq (..))
 import           Data.Functor        (Functor (..), (<$>))
 import           Data.Int            (Int)
 import           Data.List           (any, filter, find, foldl', head, last,
-                                      repeat, tail, zip, zipWith, (++))
+                                      null, repeat, tail, zip, zipWith, (++))
 import           Data.Maybe          (Maybe (..))
 import           Data.Semigroup      (Semigroup (..), Sum (..))
 import           Data.Traversable    (traverse)

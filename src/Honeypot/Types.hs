@@ -14,6 +14,9 @@ import           Lens.Simple          (makeLenses)
 data Pos = P !Int !Int -- row, col, index starts at 1,1
   deriving Eq
 
+instance Show Pos where
+  show (P y x) = "(" ++ show y ++ "," ++ show x ++ ")"
+
 type Dim = Pos
 
 type Fuel = Int
@@ -22,6 +25,7 @@ data Dir = West
          | North
          | East
          | South
+         deriving (Eq, Show)
 
 forward :: Dir -> Pos -> Pos
 forward West (P y x)  = P y (x-1)
@@ -58,12 +62,13 @@ data Event = TurnLeft     -- 1 fuel
 data Enemy = E { future  :: ![Pos]
                , current :: !Pos
                , past    :: ![Pos]
-               }
+               } deriving (Eq, Show)
 
 step :: Enemy -> Enemy
 step e@(E [] p [])   = e
-step (E [] p (y:ys)) = E ys y [p]
+step (E [] p (y:ys)) = E (ys ++ [p]) y []
 step (E (x:xs) p ys) = E xs x (p:ys)
+
 
 data Cell = Empty
           | Wall
@@ -77,26 +82,24 @@ instance Semigroup Cell where
 data Player = Player { _dir  :: !Dir
                      , _pos  :: !Pos
                      , _fuel :: !Fuel
-                     }
-
-$(makeLenses ''Player)
+                     } deriving (Eq, Show)
 
 playerView :: Matrix a -> Player -> [Pos]
 playerView m (Player dir p _) = go (forward dir p)
-  where go p@(P y x) = case safeGet y x m of
-                       Nothing -> []
-                       Just _  -> p : go (forward dir p)
-
+  where go p = case m !? p of
+                 Nothing -> []
+                 Just _  -> p : go (forward dir p)
 
 data Env = Env { _terrain :: Matrix Bool
                , _enemies :: [Enemy]
                , _player  :: !Player
                }
 
-$(makeLenses ''Env)
-
 (!?) :: Matrix a -> Pos -> Maybe a
 m !? (P y x) = safeGet y x m
+
+$(makeLenses ''Player)
+$(makeLenses ''Env)
 
 newtype Step a = Step (Reader Env a) -- hide constructor on export
   deriving (Functor, Applicative, Monad, MonadReader Env)

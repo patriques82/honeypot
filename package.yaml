@@ -52,4 +52,4 @@ tests:
     - honeypot
     - tasty
     - tasty-quickcheck
-    - tasty-hspec
+    - tasty-hunit
