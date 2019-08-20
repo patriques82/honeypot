@@ -17,6 +17,9 @@ data Pos = P !Int !Int -- row, col, index starts at 1,1
 instance Show Pos where
   show (P y x) = "(" ++ show y ++ "," ++ show x ++ ")"
 
+position :: (Int, Int) -> Pos
+position (x, y) = P y x
+
 type Dim = Pos
 
 type Fuel = Int
@@ -51,7 +54,6 @@ left East  = North
 left North = West
 left South = East
 
-
 data Event = TurnLeft     -- 1 fuel
            | TurnRight    -- 1 fuel
            | MoveForward  -- 1 fuel
@@ -66,9 +68,8 @@ data Enemy = E { future  :: ![Pos]
 
 step :: Enemy -> Enemy
 step e@(E [] p [])   = e
-step (E [] p (y:ys)) = E (ys ++ [p]) y []
+step (E [] p (y:ys)) = E ys y [p]
 step (E (x:xs) p ys) = E xs x (p:ys)
-
 
 data Cell = Empty
           | Wall
@@ -94,6 +95,12 @@ data Env = Env { _terrain :: Matrix Bool
                , _enemies :: [Enemy]
                , _player  :: !Player
                }
+
+data Status = Lost | Won
+
+data GameState = GameOver Status
+               | Continue Env
+
 
 (!?) :: Matrix a -> Pos -> Maybe a
 m !? (P y x) = safeGet y x m

@@ -3,10 +3,7 @@
 {-# LANGUAGE MultiWayIf                 #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 
-module Honeypot.Config.Env
-  ( Config (..)
-  , runConfig
-  ) where
+module Honeypot.Config.Env where
 
 import           Control.Monad.Except (Except, MonadError, runExcept,
                                        throwError)
@@ -15,27 +12,27 @@ import           Data.Matrix          (Matrix, fromList, matrix, setElem)
 import           Honeypot.Config.Path (Path, evalPath)
 import           Honeypot.Config.Util
 import           Honeypot.Prelude
-import           Honeypot.Types
+import           Honeypot.Types       (Dim, Dir (..), Enemy (..), Env (..),
+                                       Fuel, Player (..), Pos (..))
 
-data Config a where
-  CBoard   :: [Pos] -> Config (Matrix Bool)
-  CEnemies :: [Path] -> Config [Enemy]
-  CPlayer  :: Dir -> Pos -> Fuel -> Config Player
-  CEnv     :: Config (Matrix Bool) -> Config [Enemy] -> Config Player -> Config Env
+data EnvConfig a where
+  CBoard   :: [Pos] -> EnvConfig (Matrix Bool)
+  CEnemies :: [Path] -> EnvConfig [Enemy]
+  CPlayer  :: Dir -> Pos -> Fuel -> EnvConfig Player
+  CEnv     :: EnvConfig (Matrix Bool) -> EnvConfig [Enemy] -> EnvConfig Player -> EnvConfig Env
 
 data ConfigError = BlockOutOfBounds Pos
                  | EnemyPathIsNotStraightLines
                  | NoPointsInEnemyPath
                  | PlayerOutOfBounds Pos
                  | NegativePlayerFuel Fuel
+                 deriving Show
 
 newtype ConfigEval a = ConfigEval { runConfEval :: ReaderT Dim (Except ConfigError) a }
   deriving (Functor, Applicative, Monad, MonadReader Dim, MonadError ConfigError)
 
-runConfig :: Dim -> Config a -> Either ConfigError a
-runConfig dim conf = runExcept (runReaderT (runConfEval (evalConfig conf)) dim)
 
-evalConfig :: Config a -> ConfigEval a
+evalConfig :: EnvConfig a -> ConfigEval a
 evalConfig (CPlayer dir pos fuel) = do
   d <- ask
   if | outOfBounds d pos -> throwError (PlayerOutOfBounds pos)

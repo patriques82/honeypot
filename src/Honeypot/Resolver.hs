@@ -1,35 +1,18 @@
-{-# LANGUAGE BangPatterns               #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE BangPatterns      #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Honeypot.Resolver
   ( resolve
   ) where
 
-import qualified Control.Monad.State as ST
-import           Honeypot.Extract    (cell, runExt)
+import           Honeypot.EventCalc
+import           Honeypot.Extract   (cell, runExt)
 import           Honeypot.Prelude
 import           Honeypot.Types
-import           Lens.Simple         ((%~), (&), (.~), (^.))
+import           Lens.Simple        ((%~), (&), (.~), (^.))
 
-newtype EventCalc a = EventCalc { runCalc :: ST.StateT Env Maybe a }
-  deriving (Functor, Applicative, Monad, ST.MonadState Env)
-
-lift :: Maybe a -> EventCalc a
-lift m = EventCalc $ ST.lift m
-
-put :: Env -> EventCalc ()
-put = ST.put
-
-get :: EventCalc Env
-get = ST.get
-
-modify :: (Env -> Env) -> EventCalc ()
-modify = ST.modify
-
-resolve :: Env -> Event -> Maybe Env
-resolve env event =
-  ST.execStateT (runCalc (exec event)) env
+resolve :: Env -> Event -> Either Status Env
+resolve env event = execEventCalc (exec event) env
 
 exec :: Event -> EventCalc ()
 exec e = do
@@ -97,7 +80,7 @@ adjustFuel f = do
   env <- get
   let !fuel' = f (env ^. player . fuel)
   if fuel' < 0
-     then lift Nothing -- end game >TODO (Either?)
+     then lift (Left Lost)
      else put (env & player . fuel .~ fuel')
 
 turn :: (Dir -> Dir) -> EventCalc ()

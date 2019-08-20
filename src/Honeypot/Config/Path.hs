@@ -19,17 +19,12 @@ data Walk next = Go Pos next
 
 type Path = Free Walk ()
 
-go :: Pos -> Path
-go p = liftF (Go p ())
+-- x y
+go :: Int -> Int -> Path
+go x y = liftF (Go (P y x) ())
 
 end :: Path
 end = liftF End
-
--- example
-path :: Path
-path = do
-  go (P 10 2)
-  end
 
 evalPath :: Dim -> Path -> Maybe [Pos]
 evalPath dim (Pure ())   = Just []

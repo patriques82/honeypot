@@ -1,19 +1,13 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Honeypot.Api
-  ( identifyTarget
+  ( exec
+  , identifyTarget
   , lidarBack
   , lidarFront
   , lidarLeft
   , lidarRight
-  , (|~)
   , frames
-  -- reexported types
-  , Step
-  , Event (..)
-  , Cell (..)
-  , Fuel
-  , Env
   ) where
 
 import           Honeypot.Extract
@@ -21,6 +15,16 @@ import           Honeypot.Prelude
 import           Honeypot.Resolver
 import           Honeypot.Types
 import           Lens.Simple       ((&), (.~), (^.))
+
+exec :: GameState -> Step Event -> GameState
+exec st@(GameOver _) _   = st
+exec (Continue env) step =
+  case (env |~ step) of
+    Left status -> GameOver status
+    Right env'  -> Continue env'
+
+(|~) :: Env -> Step Event -> Either Status Env
+env |~ step = resolve env (step `runStep` env)
 
 currentFuel :: Step Fuel
 currentFuel = withEnv (\e -> e ^. player . fuel)
@@ -76,15 +80,8 @@ lidarRight = do
                   North -> until notEmpty (countEmpty <$> cell) rightE
   return $ getSum (runExt extract (e ^. player . pos) e)
 
--- provided by user
-playerStep :: Step Event
-playerStep = undefined
-
-(|~) :: Env -> Step Event -> Maybe Env
-env |~ step = resolve env (step `runStep` env)
-
 frames :: Step Event -> Env -> [Env]
 frames playerStep env =
-  case env |~ playerStep of
-    Just env' -> env' : frames playerStep env'
-    Nothing   -> []
+  case (env |~ playerStep) of
+    Right env' -> env' : frames playerStep env'
+    Left _     -> []

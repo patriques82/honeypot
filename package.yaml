@@ -23,9 +23,9 @@ library:
   dependencies:
   - containers
   - mtl
-  - matrix
   - free
   - lens-simple
+  - matrix
 
 executables:
   honeypot-exe:
@@ -39,6 +39,7 @@ executables:
     dependencies:
     - honeypot
     - gloss
+    - matrix
 
 tests:
   honeypot-test:
@@ -50,7 +51,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - honeypot
-    - matrix
     - tasty
     - tasty-quickcheck
     - tasty-hunit
+    - matrix
