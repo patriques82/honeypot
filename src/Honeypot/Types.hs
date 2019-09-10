@@ -7,7 +7,7 @@ module Honeypot.Types where
 
 import           Control.Monad.Reader (MonadReader, Reader, ask, asks,
                                        runReader)
-import           Data.Matrix          (Matrix, safeGet)
+import           Data.Matrix          (Matrix, ncols, nrows, safeGet, (!))
 import           Honeypot.Prelude
 import           Lens.Simple          (makeLenses)
 
@@ -54,6 +54,8 @@ left East  = North
 left North = West
 left South = East
 
+type Board = Matrix Bool
+
 data Event = TurnLeft     -- 1 fuel
            | TurnRight    -- 1 fuel
            | MoveForward  -- 1 fuel
@@ -91,7 +93,7 @@ playerView m (Player dir p _) = go (forward dir p)
                  Nothing -> []
                  Just _  -> p : go (forward dir p)
 
-data Env = Env { _terrain :: Matrix Bool
+data Env = Env { _terrain :: Board
                , _enemies :: [Enemy]
                , _player  :: !Player
                }
@@ -104,6 +106,7 @@ data GameState = GameOver Status
 
 (!?) :: Matrix a -> Pos -> Maybe a
 m !? (P y x) = safeGet y x m
+
 
 $(makeLenses ''Player)
 $(makeLenses ''Env)

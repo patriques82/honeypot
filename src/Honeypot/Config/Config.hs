@@ -1,8 +1,14 @@
 module Honeypot.Config.Config
   ( module Honeypot.Config.Path
-  , Config (..)
+  , Config
   , config
   , runConfig
+  , dim
+  , blocks
+  , dir
+  , pos
+  , fuel
+  , enemies
   ) where
 
 import           Control.Monad.Except (Except, MonadError, runExcept,

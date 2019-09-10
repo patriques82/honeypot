@@ -30,6 +30,7 @@ module Honeypot.Prelude
   , find
   , flip
   , foldl'
+  , foldr
   , head
   , id
   , last
@@ -53,8 +54,9 @@ import           Data.Either         (Either (..))
 import           Data.Eq             (Eq (..))
 import           Data.Functor        (Functor (..), (<$>))
 import           Data.Int            (Int)
-import           Data.List           (any, filter, find, foldl', head, last,
-                                      null, repeat, tail, zip, zipWith, (++))
+import           Data.List           (any, filter, find, foldl', foldr, head,
+                                      last, null, repeat, tail, zip, zipWith,
+                                      (++))
 import           Data.Maybe          (Maybe (..))
 import           Data.Semigroup      (Semigroup (..), Sum (..))
 import           Data.Traversable    (traverse)
