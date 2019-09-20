@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 
-module Honeypot.EventCalc where
+module Honeypot.Api.EventCalc where
 
 import qualified Control.Monad.State as ST
 import           Honeypot.Prelude

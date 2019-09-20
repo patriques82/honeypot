@@ -1,4 +1,4 @@
-module Honeypot.Graphics
+module Honeypot.Graphics.Draw
   ( draw
   ) where
 

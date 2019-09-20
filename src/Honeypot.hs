@@ -1,5 +1,5 @@
 module Honeypot
-  ( module Honeypot.Api
+  ( module Honeypot.Api.Api
   , module Honeypot.Config.Config
   , Board
   , Dir (..)
@@ -16,9 +16,9 @@ module Honeypot
 
 import           Graphics.Gloss
 import           Graphics.Gloss.Data.ViewPort (ViewPort)
-import           Honeypot.Api
+import           Honeypot.Api.Api
 import           Honeypot.Config.Config
-import           Honeypot.Graphics
+import           Honeypot.Graphics.Draw
 import           Honeypot.Types               (Board, Dir (..), Enemy (..),
                                                Env (..), Event (..),
                                                GameState (..), Player (..),

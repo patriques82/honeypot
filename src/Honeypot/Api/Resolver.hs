@@ -1,15 +1,15 @@
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Honeypot.Resolver
+module Honeypot.Api.Resolver
   ( resolve
   ) where
 
-import           Honeypot.EventCalc
-import           Honeypot.Extract   (cell, runExt)
+import           Honeypot.Api.EventCalc
+import           Honeypot.Api.Extract   (cell, runExt)
 import           Honeypot.Prelude
 import           Honeypot.Types
-import           Lens.Simple        ((%~), (&), (.~), (^.))
+import           Lens.Simple            ((%~), (&), (.~), (^.))
 
 resolve :: Env -> Event -> Either Status Env
 resolve env event = execEventCalc (exec event) env
