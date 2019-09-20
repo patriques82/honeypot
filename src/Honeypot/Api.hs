@@ -19,7 +19,7 @@ import           Lens.Simple       ((&), (.~), (^.))
 exec :: GameState -> Step Event -> GameState
 exec st@(GameOver _) _   = st
 exec (Continue env) step =
-  case (env |~ step) of
+  case env |~ step of
     Left status -> GameOver status
     Right env'  -> Continue env'
 
@@ -33,7 +33,7 @@ currentFuel = withEnv (\e -> e ^. player . fuel)
 identifyTarget :: Step Cell
 identifyTarget = do
   e <- env
-  let extract = case (e ^. player . dir) of
+  let extract = case e ^. player . dir of
                   West  -> until notEmpty cell leftE
                   East  -> until notEmpty cell rightE
                   South -> until notEmpty cell downE
@@ -43,7 +43,7 @@ identifyTarget = do
 lidarBack :: Step Int
 lidarBack = do
   e <- env
-  let extract = case (e ^. player . dir) of
+  let extract = case e ^. player . dir of
                   West  -> until notEmpty (countEmpty <$> cell) rightE
                   East  -> until notEmpty (countEmpty <$> cell) leftE
                   South -> until notEmpty (countEmpty <$> cell) upE
@@ -53,7 +53,7 @@ lidarBack = do
 lidarFront :: Step Int
 lidarFront = do
   e <- env
-  let extract = case (e ^. player . dir) of
+  let extract = case e ^. player . dir of
                   West  -> until notEmpty (countEmpty <$> cell) leftE
                   East  -> until notEmpty (countEmpty <$> cell) rightE
                   South -> until notEmpty (countEmpty <$> cell) downE
@@ -63,7 +63,7 @@ lidarFront = do
 lidarLeft :: Step Int
 lidarLeft = do
   e <- env
-  let extract = case (e ^. player . dir) of
+  let extract = case e ^. player . dir of
                   West  -> until notEmpty (countEmpty <$> cell) downE
                   East  -> until notEmpty (countEmpty <$> cell) upE
                   South -> until notEmpty (countEmpty <$> cell) rightE
@@ -73,7 +73,7 @@ lidarLeft = do
 lidarRight :: Step Int
 lidarRight = do
   e <- env
-  let extract = case (e ^. player . dir) of
+  let extract = case e ^. player . dir of
                   West  -> until notEmpty (countEmpty <$> cell) upE
                   East  -> until notEmpty (countEmpty <$> cell) downE
                   South -> until notEmpty (countEmpty <$> cell) leftE
@@ -82,6 +82,6 @@ lidarRight = do
 
 frames :: Step Event -> Env -> [Env]
 frames playerStep env =
-  case (env |~ playerStep) of
+  case env |~ playerStep of
     Right env' -> env' : frames playerStep env'
     Left _     -> []

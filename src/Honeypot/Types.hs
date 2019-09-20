@@ -103,10 +103,8 @@ data Status = Lost | Won
 data GameState = GameOver Status
                | Continue Env
 
-
 (!?) :: Matrix a -> Pos -> Maybe a
 m !? (P y x) = safeGet y x m
-
 
 $(makeLenses ''Player)
 $(makeLenses ''Env)

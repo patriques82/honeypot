@@ -1,16 +1,19 @@
 module Main where
 
 import           Graphics                     (draw)
-import           Graphics.Gloss               (Display (InWindow), simulate,
+import           Graphics.Gloss               (Display (InWindow), circle,
+                                               display, loadBMP, simulate,
                                                white)
 import           Graphics.Gloss.Data.ViewPort (ViewPort)
 import           Honeypot
 
 main :: IO ()
 main = do
+  tank <- loadBMP "data/tank.bmp"
+  monster <- loadBMP "data/monster.bmp"
   case runConfig conf of
-    Left e    -> putStrLn (show e)
-    Right env -> simulate window white simulationRate env draw update
+    Left e    -> print e
+    Right env -> simulate window white simulationRate env (draw tank monster) update
 
 conf :: Config
 conf = config { dim = (10, 10)
@@ -18,7 +21,7 @@ conf = config { dim = (10, 10)
                          , (2,5), (2,9), (3,1)
                          , (3,2), (4,5), (10,3)
                          ]
-              , dir = North
+              , dir = East
               , pos = (3,3)
               , fuel = 100
               , enemies = [ do go 1 2

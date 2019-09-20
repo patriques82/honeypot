@@ -29,8 +29,8 @@ instance Drawable (Matrix a) where
   draw m p = undefined
 
 getOccupied :: Board -> [Pos]
-getOccupied m = foldr (\(y,x) xs -> if occupied m (y,x) then ((P y x) : xs) else xs) [] ps
-  where ps = [(y',x') | y' <- [1..(ncols m)] , x' <- [1..(nrows m)]]
+getOccupied b = foldr (\(y,x) xs -> if occupied b (y,x) then P y x : xs else xs) [] ps
+  where ps = [(y',x') | y' <- [1..(ncols b)] , x' <- [1..(nrows b)]]
 
 occupied :: Board -> (Int, Int) -> Bool
 occupied = (!)
