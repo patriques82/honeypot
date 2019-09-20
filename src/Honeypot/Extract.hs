@@ -26,7 +26,7 @@ instance Functor Extract where
 
 instance Applicative Extract where
   pure x = Ext $ \_ _ -> x
-  (Ext f) <*> (Ext x) = Ext $ \p e -> (f p e) (x p e)
+  (Ext f) <*> (Ext x) = Ext $ \p e -> f p e (x p e)
 
 instance Monad Extract where
   return = pure
@@ -41,9 +41,7 @@ cell = Ext $ \p@(P y x) e ->
       block = bool Nothing (Just Block) (ts ! (y,x))
    in case ts !? p of
         Nothing -> Wall
-        _ -> case enemy <> block of
-               Nothing -> Empty
-               Just x  -> x
+        _       -> fromMaybe Empty (enemy <> block)
 
 shift :: Extract a -> (Pos -> Pos) -> Extract a
 shift (Ext f) g = Ext $ \p e -> f (g p) e

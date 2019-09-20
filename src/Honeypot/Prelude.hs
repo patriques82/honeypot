@@ -26,11 +26,13 @@ module Honeypot.Prelude
   , any
   , bool
   , const
+  , elem
   , filter
   , find
   , flip
   , foldl'
   , foldr
+  , fromMaybe
   , head
   , id
   , last
@@ -54,10 +56,10 @@ import           Data.Either         (Either (..))
 import           Data.Eq             (Eq (..))
 import           Data.Functor        (Functor (..), (<$>))
 import           Data.Int            (Int)
-import           Data.List           (any, filter, find, foldl', foldr, head,
-                                      last, null, repeat, tail, zip, zipWith,
-                                      (++))
-import           Data.Maybe          (Maybe (..))
+import           Data.List           (any, elem, filter, find, foldl', foldr,
+                                      head, last, null, repeat, tail, zip,
+                                      zipWith, (++))
+import           Data.Maybe          (Maybe (..), fromMaybe)
 import           Data.Semigroup      (Semigroup (..), Sum (..))
 import           Data.Traversable    (traverse)
 import           Prelude             (Num (..), Ord (..), Show (..), String,

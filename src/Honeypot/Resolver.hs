@@ -72,7 +72,7 @@ removeEnemies :: EventCalc ()
 removeEnemies = do
   env@(Env terrain enemies' player) <- get
   let !view = playerView terrain player
-      pred e = any (== (current e)) view
+      pred e = current e `elem` view
   put (env & enemies .~ filter pred enemies')
 
 adjustFuel :: (Int -> Int) -> EventCalc ()

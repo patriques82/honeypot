@@ -1,32 +1,55 @@
-module Honeypot.Graphics where
+module Honeypot.Graphics
+  ( draw
+  ) where
 
 import           Data.Matrix
+import           Graphics.Gloss
 import           Honeypot.Types
 
-data Pair = Pair Pos Pos
+draw :: Picture -> Picture -> GameState -> Picture
+draw _ _ (GameOver Lost) = undefined
+draw _ _ (GameOver Won) = undefined
+draw tank monster (Continue (Env b es p)) =
+  rotate 90.0 (Pictures [ drawBoard b
+                        , drawEnemies monster es
+                        , drawPlayer tank p
+                        ])
 
-data Shape = Line Pair
-           | Rect Pair
-           | Lines [Pair]
-           | Circle Pos Int
-           | Shapes [Shape]
+drawBoard :: Board -> Picture
+drawBoard b = Pictures $ rows ++ cols ++ blocks b
 
-class Drawable a where
-  draw :: a -> Int -> Int -> Shape
+rows :: [Picture]
+rows = [ color black (line [x, y]) | (x, y) <- xs `zip` ys ]
+  where
+    xs = zip [0.0, 0.0 .. 0.0] [0.0, 30.0 .. 300.0]
+    ys = zip [300.0, 300.0 .. 300.0] [0.0, 30.0 .. 300.0]
 
-instance Drawable Env where
-  draw (Env t e p) y x = undefined --Shapes [draw t y x, draw e y' x', draw p y' x']
-    --where y' = y / ncols t
-          --x' = x / nrows t
+cols :: [Picture]
+cols = [ color black (line [x, y]) | (x, y) <- xs `zip` ys ]
+  where
+    xs = zip [0.0, 30.0 .. 300.0] [0.0, 0.0 .. 0.0]
+    ys = zip [0.0, 30.0 .. 300.0] [300.0, 300.0 .. 300.0]
 
-instance Drawable Player where
-  draw (Player _ p _) y x = undefined --Rect (Pair p (p + (P y x)))
+blocks :: Board -> [Picture]
+blocks = fmap f . getOccupied
+  where f (P y x) = translate (convert x) (convert y) $ color black (rectangleSolid 30.0 30.0)
 
-instance Drawable Enemy where
-  draw (E _ p _) y x = undefined -- Rect (Pair p (p + (P (y -  x)))
+drawEnemies :: Picture -> [Enemy] -> Picture
+drawEnemies monster = Pictures . foldr (\(E _ (P y x) _) xs ->
+  translate (convert x) (convert y) (scale 0.1 0.1 monster) : xs) []
 
-instance Drawable (Matrix a) where
-  draw m p = undefined
+drawPlayer :: Picture -> Player -> Picture
+drawPlayer tank (Player dir (P y x) _) =
+  translate (convert x) (convert y) (rotate (dir2Deg dir) (scale 0.1 0.1 tank))
+
+convert :: Int -> Float
+convert x = fromIntegral x * 30.0 - 15.0
+
+dir2Deg :: Dir -> Float
+dir2Deg North = 270.0
+dir2Deg South = 90.0
+dir2Deg East  = 0.0
+dir2Deg West  = 180.0
 
 getOccupied :: Board -> [Pos]
 getOccupied b = foldr (\(y,x) xs -> if occupied b (y,x) then P y x : xs else xs) [] ps

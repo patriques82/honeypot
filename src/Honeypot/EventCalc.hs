@@ -23,4 +23,4 @@ modify :: (Env -> Env) -> EventCalc ()
 modify = ST.modify
 
 execEventCalc :: EventCalc a -> Env -> Either Status Env
-execEventCalc calc env = ST.execStateT (runCalc calc) env
+execEventCalc calc = ST.execStateT (runCalc calc)

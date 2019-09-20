@@ -47,7 +47,7 @@ playerStep = do
   fuel <- currentFuel
   cell <- identifyTarget
   nr <- lidarFront
-  // do some calculations on the information
+  -- do some calculations on the information
   let event = calculateEvent fuel cell nr
   return event
 ```

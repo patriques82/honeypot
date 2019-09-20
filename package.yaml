@@ -9,9 +9,10 @@ copyright:           "2019 Patrik Nygren"
 extra-source-files:
 - README.md
 - ChangeLog.md
+- data/*.bmp
+  
 
-# synopsis:            Honeypot challange clone
-# category:            AI
+synopsis:            Honeypot challange clone
 
 description:         Please see the README on GitHub at <https://github.com/patriques82/honeypot#readme>
 
@@ -26,6 +27,7 @@ library:
   - free
   - lens-simple
   - matrix
+  - gloss
 
 executables:
   honeypot-exe:
@@ -38,8 +40,6 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - honeypot
-    - gloss
-    - matrix
 
 tests:
   honeypot-test:
