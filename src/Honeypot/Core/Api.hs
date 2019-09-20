@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Honeypot.Api.Api
+module Honeypot.Core.Api
   ( exec
   , identifyTarget
   , lidarBack
@@ -10,11 +10,11 @@ module Honeypot.Api.Api
   , frames
   ) where
 
-import           Honeypot.Api.Extract
-import           Honeypot.Api.Resolver
+import           Honeypot.Core.Extract
+import           Honeypot.Core.Resolver
 import           Honeypot.Prelude
 import           Honeypot.Types
-import           Lens.Simple           ((&), (.~), (^.))
+import           Lens.Simple            ((&), (.~), (^.))
 
 exec :: GameState -> Step Event -> GameState
 exec st@(GameOver _) _   = st

@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Honeypot.Api.Extract
+module Honeypot.Core.Extract
   ( Extract
   , runExt
   , cell

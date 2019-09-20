@@ -3,15 +3,19 @@ module Main where
 import           Honeypot
 
 main :: IO ()
-main = runGame player config { dim = (10, 10)
-                             , blocks = blockPositions
-                             , dir = East
-                             , pos = (3,3)
-                             , fuel = 100
-                             , enemies = [ enemy1, enemy2 ]
-                             , tankBmp = "data/tank.bmp"
-                             , enemyBmp = "data/monster.bmp"
-                             }
+main = runGame player level
+
+level :: Config
+level = config { dim = (10, 10)
+               , blocks = blockPositions
+               , dir = East
+               , pos = (3,3)
+               , fuel = 100
+               , enemies = [ enemy1, enemy2 ]
+               , tankBmp = "data/tank.bmp"
+               , enemyBmp = "data/monster.bmp"
+               }
+
 
 enemy1, enemy2 :: Path
 enemy1 = do go 1 2
