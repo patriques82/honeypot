@@ -4,7 +4,8 @@ module Honeypot.Run
 
 import           Graphics.Gloss
 import           Graphics.Gloss.Data.ViewPort (ViewPort)
-import           Honeypot.Config.Config       (Config, runConfig)
+import           Honeypot.Config.Config       (Config, enemyBmp, runConfig,
+                                               tankBmp)
 import           Honeypot.Core.Api            (exec)
 import           Honeypot.Graphics.Draw       (draw)
 import           Honeypot.Types
