@@ -10,7 +10,7 @@ level = config { dim = (10, 10)
                , blocks = blockPositions
                , dir = East
                , pos = (3,3)
-               , fuel = 100
+               , fuel = 10
                , enemies = [ enemy1, enemy2 ]
                , graphicsCfg = graphics { tankBmp = "data/tank.bmp"
                                         , enemyBmp = "data/monster.bmp"

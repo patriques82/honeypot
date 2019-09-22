@@ -23,8 +23,10 @@ cellSize :: Float
 cellSize = 30.0
 
 draw :: PictureConf -> GameState -> Picture
-draw PictureConf {dim, ..} (GameOver Lost) = undefined
-draw PictureConf {dim, ..} (GameOver Won) = undefined
+draw PictureConf {dim, ..} (GameOver Lost) =
+  scale 0.5 0.5 (text "You Lost")
+draw PictureConf {dim, ..} (GameOver Won) =
+  scale 0.5 0.5 (text "You Won")
 draw PictureConf {dim, ..} (Continue Env {..}) =
   rotate 90.0 (Pictures [ drawBoard dim _terrain
                         , drawEnemies enemy _enemies
