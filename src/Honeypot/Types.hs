@@ -99,8 +99,8 @@ playerView m (Player dir p _) = go (forward dir p)
                  Nothing -> []
                  Just _  -> p : go (forward dir p)
 
-data Env = Env { _terrain :: Board
-               , _enemies :: [Enemy]
+data Env = Env { _terrain :: !Board
+               , _enemies :: ![Enemy]
                , _player  :: !Player
                }
 

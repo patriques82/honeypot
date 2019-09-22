@@ -1,9 +1,10 @@
+{-# LANGUAGE NamedFieldPuns  #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Honeypot.Graphics.Draw
   ( cellSize
   , draw
-  , PictureCfg (..)
+  , PictureConf (..)
   ) where
 
 import           Data.Matrix
@@ -11,20 +12,20 @@ import           Graphics.Gloss   hiding (dim)
 import           Honeypot.Prelude
 import           Honeypot.Types   hiding (Dim)
 
-data PictureCfg = PictureCfg { tank  :: Picture
-                             , enemy :: Picture
-                             , dim   :: Dim
-                             }
+data PictureConf = PictureConf { tank  :: Picture
+                               , enemy :: Picture
+                               , dim   :: Dim
+                               }
 
 type Dim = (Int, Int)
 
 cellSize :: Float
 cellSize = 30.0
 
-draw :: PictureCfg -> GameState -> Picture
-draw _ (GameOver Lost) = undefined
-draw _ (GameOver Won) = undefined
-draw PictureCfg {..} (Continue Env {..}) =
+draw :: PictureConf -> GameState -> Picture
+draw PictureConf {dim, ..} (GameOver Lost) = undefined
+draw PictureConf {dim, ..} (GameOver Won) = undefined
+draw PictureConf {dim, ..} (Continue Env {..}) =
   rotate 90.0 (Pictures [ drawBoard dim _terrain
                         , drawEnemies enemy _enemies
                         , drawPlayer tank _player

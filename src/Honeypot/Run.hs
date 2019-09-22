@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns  #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Honeypot.Run
@@ -12,28 +13,27 @@ import           Honeypot.Prelude
 import           Honeypot.Types
 
 runGame :: Step Event -> C.Config -> IO ()
-runGame step conf@C.Config {..} =
+runGame step conf@C.Config {dim, graphicsCfg, ..} =
   case C.runConfig conf of
-    Right state -> runSim state dim gfxCtx step
+    Right state -> run state dim graphicsCfg step
     Left err    -> print err
 
-runSim :: GameState -> (Int, Int) -> C.GfxCtx -> Step Event -> IO ()
-runSim state dim gfxCtx step = do
-  picCfg <- mkPictureCfg dim gfxCtx
-  simulate win bg freq state (draw picCfg) (update step)
+run :: GameState -> (Int, Int) -> C.GraphicsCfg -> Step Event -> IO ()
+run state dim ctx step = do
+  picConf <- mkPictureConf dim ctx
+  simulate win white fps state (draw picConf) (update step)
    where
      win = InWindow "Honeypot Challenge" (winSize dim) (0,0)
      update step _ _ state = exec state step
-     bg = white
-     freq = 1
+     fps = 1
+
+mkPictureConf :: (Int, Int) -> C.GraphicsCfg -> IO PictureConf
+mkPictureConf dim C.GraphicsCfg {..} = do
+  tank <- loadBMP tankBmp
+  enemy <- loadBMP enemyBmp
+  return PictureConf {..}
 
 winSize :: (Int, Int) -> (Int, Int)
 winSize (x, y) = (x * cell * 4, y * cell * 3)
   where
     cell = round cellSize
-
-mkPictureCfg :: (Int, Int) -> C.GfxCtx -> IO PictureCfg
-mkPictureCfg dim C.GfxCtx {..} = do
-  tank <- loadBMP tankBmp
-  enemy <- loadBMP enemyBmp
-  return PictureCfg {..}

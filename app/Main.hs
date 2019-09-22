@@ -12,12 +12,10 @@ level = config { dim = (10, 10)
                , pos = (3,3)
                , fuel = 100
                , enemies = [ enemy1, enemy2 ]
-               , gfxCtx = context { tankBmp = "data/tank.bmp"
-                                  , enemyBmp = "data/monster.bmp"
-                                  , size = (1100, 1100)
-                                  }
+               , graphicsCfg = graphics { tankBmp = "data/tank.bmp"
+                                        , enemyBmp = "data/monster.bmp"
+                                        }
                }
-
 
 enemy1, enemy2 :: Path
 enemy1 = do go 1 2

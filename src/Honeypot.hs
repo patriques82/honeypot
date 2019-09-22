@@ -16,5 +16,5 @@ module Honeypot
 
 import           Honeypot.Config.Config
 import           Honeypot.Core.Api
-import           Honeypot.Run           (runGame)
+import           Honeypot.Run
 import           Honeypot.Types
