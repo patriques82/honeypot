@@ -1,16 +1,12 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Honeypot.Config.Config
   ( module Honeypot.Config.Path
-  , Config
+  , Config (..)
+  , GfxCtx (..)
   , config
+  , context
   , runConfig
-  , dim
-  , blocks
-  , dir
-  , pos
-  , fuel
-  , enemies
-  , tankBmp
-  , enemyBmp
   ) where
 
 import           Control.Monad.Except (Except, MonadError, runExcept,
@@ -18,17 +14,28 @@ import           Control.Monad.Except (Except, MonadError, runExcept,
 import           Control.Monad.Reader (MonadReader, ReaderT, ask, runReaderT)
 import           Honeypot.Config.Env
 import           Honeypot.Config.Path
+import           Honeypot.Prelude
 import           Honeypot.Types       (Dir (North), GameState (..), position)
 
-data Config = Config { dim      :: (Int, Int)
-                     , blocks   :: [(Int, Int)]
-                     , dir      :: Dir
-                     , pos      :: (Int, Int)
-                     , fuel     :: Int
-                     , enemies  :: [Path]
-                     , tankBmp  :: FilePath
+data GfxCtx = GfxCtx { tankBmp  :: FilePath
                      , enemyBmp :: FilePath
+                     , size     :: (Int, Int)
                      }
+
+data Config = Config { dim     :: (Int, Int)
+                     , blocks  :: [(Int, Int)]
+                     , dir     :: Dir
+                     , pos     :: (Int, Int)
+                     , fuel    :: Int
+                     , enemies :: [Path]
+                     , gfxCtx  :: GfxCtx
+                     }
+
+context :: GfxCtx
+context = GfxCtx { tankBmp = ""
+                 , enemyBmp = ""
+                 , size = (0,0)
+                 }
 
 config :: Config
 config = Config { dim = (0,0)
@@ -37,12 +44,11 @@ config = Config { dim = (0,0)
                 , pos = (0,0)
                 , fuel = 0
                 , enemies = []
-                , tankBmp = ""
-                , enemyBmp = ""
+                , gfxCtx = context
                 }
 
 runConfig :: Config -> Either ConfigError GameState
-runConfig (Config dim b dir p f e _ _) =
+runConfig conf@Config {..} =
   Continue <$> runExcept (runReaderT (runConfEval (evalConfig conf)) (position dim))
     where
-      conf = CEnv (CBoard (fmap position b)) (CEnemies e) (CPlayer dir (position p) f)
+      conf = CEnv (CBoard (fmap position blocks)) (CEnemies enemies) (CPlayer dir (position pos) fuel)

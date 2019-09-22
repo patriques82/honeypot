@@ -1,10 +1,9 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Honeypot.Prelude
   ( Applicative (..)
   , Semigroup (..)
   , Bool (..)
   , Eq (..)
+  , FilePath
   , Functor (..)
   , Monad (..)
   , Maybe (..)
@@ -15,6 +14,7 @@ module Honeypot.Prelude
   , Sum (..)
   , String
   , Int
+  , Float
   , IO
   , (<$>)
   , ($)
@@ -23,6 +23,7 @@ module Honeypot.Prelude
   , (||)
   , (&&)
   , (++)
+  , (/)
   , any
   , bool
   , const
@@ -33,13 +34,19 @@ module Honeypot.Prelude
   , foldl'
   , foldr
   , fromMaybe
+  , fromIntegral
+  , fromRational
   , head
   , id
   , last
   , not
   , null
   , otherwise
+  , print
+  , putStr
+  , putStrLn
   , repeat
+  , round
   , subtract
   , tail
   , traverse
@@ -62,7 +69,8 @@ import           Data.List           (any, elem, filter, find, foldl', foldr,
 import           Data.Maybe          (Maybe (..), fromMaybe)
 import           Data.Semigroup      (Semigroup (..), Sum (..))
 import           Data.Traversable    (traverse)
-import           Prelude             (Num (..), Ord (..), Show (..), String,
-                                      const, flip, id, subtract, undefined, ($),
-                                      ($!), (.))
-import           System.IO           (IO)
+import           Prelude             (Float, Fractional, Num (..), Ord (..),
+                                      Show (..), String, const, flip,
+                                      fromIntegral, fromRational, id, round,
+                                      subtract, undefined, ($), ($!), (.), (/))
+import           System.IO           (FilePath, IO, print, putStr, putStrLn)

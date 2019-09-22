@@ -1,5 +1,4 @@
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE DeriveFunctor #-}
 
 module Honeypot.Config.Path
   ( Path

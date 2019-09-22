@@ -12,8 +12,10 @@ level = config { dim = (10, 10)
                , pos = (3,3)
                , fuel = 100
                , enemies = [ enemy1, enemy2 ]
-               , tankBmp = "data/tank.bmp"
-               , enemyBmp = "data/monster.bmp"
+               , gfxCtx = context { tankBmp = "data/tank.bmp"
+                                  , enemyBmp = "data/monster.bmp"
+                                  , size = (1100, 1100)
+                                  }
                }
 
 

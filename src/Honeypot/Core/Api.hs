@@ -1,5 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Honeypot.Core.Api
   ( exec
   , identifyTarget
@@ -29,7 +27,6 @@ env |~ step = resolve env (step `runStep` env)
 currentFuel :: Step Fuel
 currentFuel = withEnv (\e -> e ^. player . fuel)
 
--- Identify obstacle in front
 identifyTarget :: Step Cell
 identifyTarget = do
   e <- env

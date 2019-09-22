@@ -1,59 +1,71 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Honeypot.Graphics.Draw
-  ( draw
+  ( cellSize
+  , draw
+  , PictureCfg (..)
   ) where
 
 import           Data.Matrix
-import           Graphics.Gloss
-import           Honeypot.Types
+import           Graphics.Gloss   hiding (dim)
+import           Honeypot.Prelude
+import           Honeypot.Types   hiding (Dim)
 
-draw :: Picture -> Picture -> GameState -> Picture
-draw _ _ (GameOver Lost) = undefined
-draw _ _ (GameOver Won) = undefined
-draw tank monster (Continue (Env b es p)) =
-  rotate 90.0 (Pictures [ drawBoard b
-                        , drawEnemies monster es
-                        , drawPlayer tank p
+data PictureCfg = PictureCfg { tank  :: Picture
+                             , enemy :: Picture
+                             , dim   :: Dim
+                             }
+
+type Dim = (Int, Int)
+
+cellSize :: Float
+cellSize = 30.0
+
+draw :: PictureCfg -> GameState -> Picture
+draw _ (GameOver Lost) = undefined
+draw _ (GameOver Won) = undefined
+draw PictureCfg {..} (Continue Env {..}) =
+  rotate 90.0 (Pictures [ drawBoard dim _terrain
+                        , drawEnemies enemy _enemies
+                        , drawPlayer tank _player
                         ])
 
-drawBoard :: Board -> Picture
-drawBoard b = Pictures $ rows ++ cols ++ blocks b
+drawBoard :: Dim -> Board -> Picture
+drawBoard (x,y) b = Pictures $ rows x ++ cols y ++ blocks b
 
-rows :: [Picture]
-rows = [ color black (line [x, y]) | (x, y) <- xs `zip` ys ]
+rows :: Int -> [Picture]
+rows n = [ color black (line [x, y]) | (x, y) <- xs `zip` ys ]
   where
-    xs = zip [0.0, 0.0 .. 0.0] [0.0, 30.0 .. 300.0]
-    ys = zip [300.0, 300.0 .. 300.0] [0.0, 30.0 .. 300.0]
+    h = fromIntegral n * cellSize
+    xs = zip [0.0, 0.0 .. 0.0] [0.0, cellSize .. h]
+    ys = zip [h, h .. h] [0.0, cellSize .. h]
 
-cols :: [Picture]
-cols = [ color black (line [x, y]) | (x, y) <- xs `zip` ys ]
+cols :: Int -> [Picture]
+cols m = [ color black (line [x, y]) | (x, y) <- xs `zip` ys ]
   where
-    xs = zip [0.0, 30.0 .. 300.0] [0.0, 0.0 .. 0.0]
-    ys = zip [0.0, 30.0 .. 300.0] [300.0, 300.0 .. 300.0]
+    w = fromIntegral m * cellSize
+    xs = zip [0.0, cellSize .. w] [0.0, 0.0 .. 0.0]
+    ys = zip [0.0, cellSize .. w] [w, w .. w]
 
 blocks :: Board -> [Picture]
 blocks = fmap f . getOccupied
-  where f (P y x) = translate (convert x) (convert y) $ color black (rectangleSolid 30.0 30.0)
+  where
+    pic = color black (rectangleSolid cellSize cellSize)
+    f (P y x) = translate (convert x) (convert y) $ color black pic
 
 drawEnemies :: Picture -> [Enemy] -> Picture
-drawEnemies monster = Pictures . foldr (\(E _ (P y x) _) xs ->
-  translate (convert x) (convert y) (scale 0.1 0.1 monster) : xs) []
+drawEnemies enemy = Pictures . foldr (\(E _ (P y x) _) xs ->
+  translate (convert x) (convert y) (scale 0.1 0.1 enemy) : xs) []
 
 drawPlayer :: Picture -> Player -> Picture
 drawPlayer tank (Player dir (P y x) _) =
   translate (convert x) (convert y) (rotate (dir2Deg dir) (scale 0.1 0.1 tank))
 
 convert :: Int -> Float
-convert x = fromIntegral x * 30.0 - 15.0
+convert x = fromIntegral x * cellSize - (cellSize/2)
 
 dir2Deg :: Dir -> Float
 dir2Deg North = 270.0
 dir2Deg South = 90.0
 dir2Deg East  = 0.0
 dir2Deg West  = 180.0
-
-getOccupied :: Board -> [Pos]
-getOccupied b = foldr (\(y,x) xs -> if occupied b (y,x) then P y x : xs else xs) [] ps
-  where ps = [(y',x') | y' <- [1..(ncols b)] , x' <- [1..(nrows b)]]
-
-occupied :: Board -> (Int, Int) -> Bool
-occupied = (!)

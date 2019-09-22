@@ -1,7 +1,6 @@
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiWayIf                 #-}
-{-# LANGUAGE NoImplicitPrelude          #-}
 
 module Honeypot.Config.Env where
 

@@ -1,34 +1,39 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Honeypot.Run
   ( runGame
   ) where
 
 import           Graphics.Gloss
-import           Graphics.Gloss.Data.ViewPort (ViewPort)
-import           Honeypot.Config.Config       (Config, enemyBmp, runConfig,
-                                               tankBmp)
-import           Honeypot.Core.Api            (exec)
-import           Honeypot.Graphics.Draw       (draw)
+import qualified Honeypot.Config.Config as C
+import           Honeypot.Core.Api      (exec)
+import           Honeypot.Graphics.Draw
+import           Honeypot.Prelude
 import           Honeypot.Types
 
-runGame :: Step Event -> Config -> IO ()
-runGame step conf = do
-  tank <- loadBMP (tankBmp conf)
-  monster <- loadBMP (enemyBmp conf)
-  case runConfig conf of
+runGame :: Step Event -> C.Config -> IO ()
+runGame step conf@C.Config {..} =
+  case C.runConfig conf of
+    Right state -> runSim state dim gfxCtx step
     Left err    -> print err
-    Right state -> runSim state tank monster step
 
-runSim :: GameState -> Picture -> Picture -> Step Event -> IO ()
-runSim state tank monster step =
-  simulate window white simulationRate state (draw tank monster) (update step)
+runSim :: GameState -> (Int, Int) -> C.GfxCtx -> Step Event -> IO ()
+runSim state dim gfxCtx step = do
+  picCfg <- mkPictureCfg dim gfxCtx
+  simulate win bg freq state (draw picCfg) (update step)
+   where
+     win = InWindow "Honeypot Challenge" (winSize dim) (0,0)
+     update step _ _ state = exec state step
+     bg = white
+     freq = 1
 
-window :: Display
-window = InWindow "Honeypot" (width, height) (offset, offset)
+winSize :: (Int, Int) -> (Int, Int)
+winSize (x, y) = (x * cell * 4, y * cell * 3)
+  where
+    cell = round cellSize
 
-width = 1100
-height = 1100
-offset = 100
-simulationRate = 1
-
-update :: Step Event -> ViewPort -> Float -> GameState -> GameState
-update step _ _ state = exec state step
+mkPictureCfg :: (Int, Int) -> C.GfxCtx -> IO PictureCfg
+mkPictureCfg dim C.GfxCtx {..} = do
+  tank <- loadBMP tankBmp
+  enemy <- loadBMP enemyBmp
+  return PictureCfg {..}

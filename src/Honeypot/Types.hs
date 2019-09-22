@@ -1,5 +1,4 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
 
@@ -55,6 +54,13 @@ left North = West
 left South = East
 
 type Board = Matrix Bool
+
+getOccupied :: Board -> [Pos]
+getOccupied b = foldr (\(y,x) xs -> if occupied b (y,x) then P y x : xs else xs) [] ps
+  where ps = [(y',x') | y' <- [1..(ncols b)] , x' <- [1..(nrows b)]]
+
+occupied :: Board -> (Int, Int) -> Bool
+occupied = (!)
 
 data Event = TurnLeft     -- 1 fuel
            | TurnRight    -- 1 fuel

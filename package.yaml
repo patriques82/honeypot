@@ -10,7 +10,6 @@ extra-source-files:
 - README.md
 - ChangeLog.md
 - data/*.bmp
-  
 
 synopsis:            Honeypot challange clone
 
@@ -28,6 +27,8 @@ library:
   - lens-simple
   - matrix
   - gloss
+  default-extensions:
+  - NoImplicitPrelude
 
 executables:
   honeypot-exe:
