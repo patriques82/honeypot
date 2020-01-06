@@ -8,9 +8,10 @@ module Honeypot.Graphics.Draw
   ) where
 
 import           Data.Matrix
-import           Graphics.Gloss   hiding (dim)
+import           Graphics.Gloss               hiding (dim)
+import           Graphics.Gloss.Data.ViewPort
 import           Honeypot.Prelude
-import           Honeypot.Types   hiding (Dim)
+import           Honeypot.Types               hiding (Dim)
 
 data PictureConf = PictureConf { tank  :: Picture
                                , enemy :: Picture
@@ -19,19 +20,22 @@ data PictureConf = PictureConf { tank  :: Picture
 
 type Dim = (Int, Int)
 
+scaleToViewPort :: Picture -> Picture
+scaleToViewPort = applyViewPortToPicture viewPortInit
+
 cellSize :: Float
 cellSize = 30.0
 
 draw :: PictureConf -> GameState -> Picture
 draw PictureConf {dim, ..} (GameOver Lost) =
-  scale 0.5 0.5 (text "You Lost")
+  scaleToViewPort (text "You Lost")
 draw PictureConf {dim, ..} (GameOver Won) =
-  scale 0.5 0.5 (text "You Won")
+  scaleToViewPort (text "You Won")
 draw PictureConf {dim, ..} (Continue Env {..}) =
-  rotate 90.0 (Pictures [ drawBoard dim _terrain
-                        , drawEnemies enemy _enemies
-                        , drawPlayer tank _player
-                        ])
+  scaleToViewPort $ rotate 90.0 (Pictures [ drawBoard dim _terrain
+                                          , drawEnemies enemy _enemies
+                                          , drawPlayer tank _player
+                                          ])
 
 drawBoard :: Dim -> Board -> Picture
 drawBoard (x,y) b = Pictures $ rows x ++ cols y ++ blocks b

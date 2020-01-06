@@ -21,19 +21,36 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+  - bytestring
+  - blaze-html
   - containers
   - mtl
   - free
   - lens-simple
   - matrix
   - gloss
+  - scotty
+  - wai
+  - wai-extra
+  - warp
+  - http-types
   default-extensions:
   - NoImplicitPrelude
 
 executables:
-  honeypot-exe:
-    main:                Main.hs
-    source-dirs:         app
+  grahics-exe:
+    main:                GraphicsRunner.hs
+    source-dirs:         apps
+    ghc-options:
+    - -O2
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - honeypot
+  server-exe:
+    main:                ServerRunner.hs
+    source-dirs:         apps
     ghc-options:
     - -O2
     - -threaded

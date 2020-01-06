@@ -11,10 +11,12 @@ module Honeypot
   , Pos (..)
   , Step
   , Status (..)
-  , runGame
+  , runAnimation
+  , runServer
   ) where
 
 import           Honeypot.Config.Config
 import           Honeypot.Core.Api
-import           Honeypot.Run
+import           Honeypot.Graphics.Run
+import           Honeypot.Server.Run
 import           Honeypot.Types

@@ -3,7 +3,7 @@ module Main where
 import           Honeypot
 
 main :: IO ()
-main = runGame player level
+main = runAnimation player level
 
 level :: Config
 level = config { dim = (10, 10)
