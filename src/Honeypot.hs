@@ -1,6 +1,8 @@
 module Honeypot
   ( module Honeypot.Core.Api
   , module Honeypot.Config.Config
+  , module Honeypot.Graphics.Run
+  , module Honeypot.Server.Run
   , Board
   , Dir (..)
   , Enemy (..)
@@ -11,8 +13,6 @@ module Honeypot
   , Pos (..)
   , Step
   , Status (..)
-  , runAnimation
-  , runServer
   ) where
 
 import           Honeypot.Config.Config

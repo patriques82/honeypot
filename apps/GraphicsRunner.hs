@@ -3,7 +3,12 @@ module Main where
 import           Honeypot
 
 main :: IO ()
-main = runAnimation player level
+main = runAnimation player level graphicsCfg
+
+graphicsCfg = GraphicsCfg { tankBmp = "data/tank.bmp"
+                          , enemyBmp = "data/monster.bmp"
+                          , size = (0,0)
+                          }
 
 level :: Config
 level = config { dim = (10, 10)
@@ -12,9 +17,6 @@ level = config { dim = (10, 10)
                , pos = (3,3)
                , fuel = 10
                , enemies = [ enemy1, enemy2 ]
-               , graphicsCfg = graphics { tankBmp = "data/tank.bmp"
-                                        , enemyBmp = "data/monster.bmp"
-                                        }
                }
 
 enemy1, enemy2 :: Path

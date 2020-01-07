@@ -3,10 +3,14 @@
 module Honeypot.Config.Config
   ( module Honeypot.Config.Path
   , Config (..)
-  , GraphicsCfg (..)
   , config
-  , graphics
   , runConfig
+  --, dim
+  --, blocks
+  --, dir
+  --, pos
+  --, fuel
+  --, enemies
   ) where
 
 import           Control.Monad.Except (Except, MonadError, runExcept,
@@ -17,25 +21,15 @@ import           Honeypot.Config.Path
 import           Honeypot.Prelude
 import           Honeypot.Types       (Dir (North), GameState (..), position)
 
-data GraphicsCfg = GraphicsCfg { tankBmp  :: FilePath
-                               , enemyBmp :: FilePath
-                               , size     :: (Int, Int)
-                               }
 
-data Config = Config { dim         :: (Int, Int)
-                     , blocks      :: [(Int, Int)]
-                     , dir         :: Dir
-                     , pos         :: (Int, Int)
-                     , fuel        :: Int
-                     , enemies     :: [Path]
-                     , graphicsCfg :: GraphicsCfg
+data Config = Config { dim     :: (Int, Int)
+                     , blocks  :: [(Int, Int)]
+                     , dir     :: Dir
+                     , pos     :: (Int, Int)
+                     , fuel    :: Int
+                     , enemies :: [Path]
                      }
 
-graphics :: GraphicsCfg
-graphics = GraphicsCfg { tankBmp = ""
-                       , enemyBmp = ""
-                       , size = (0,0)
-                       }
 
 config :: Config
 config = Config { dim = (0,0)
@@ -44,7 +38,6 @@ config = Config { dim = (0,0)
                 , pos = (0,0)
                 , fuel = 0
                 , enemies = []
-                , graphicsCfg = graphics
                 }
 
 runConfig :: Config -> Either ConfigError GameState
