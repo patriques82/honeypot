@@ -5,34 +5,55 @@ module Honeypot.Server.Run
 
 
 import           Control.Concurrent                (threadDelay)
---import           Control.Monad
 import           Data.ByteString.Builder           (string8)
 import           Honeypot.Prelude
-import           Network.HTTP.Types                (status200)
+import           Network.HTTP.Types                (status200, status404)
 import           Network.Wai                       (Application, Middleware,
-                                                    pathInfo, responseFile)
+                                                    pathInfo, responseFile,
+                                                    responseLBS)
 import           Network.Wai.EventSource           (ServerEvent (..),
                                                     eventSourceAppIO)
 
 import           Network.Wai.Handler.Warp          (run)
 import           Network.Wai.Middleware.AddHeaders (addHeaders)
 
+import           Network.Wai.Middleware.Static     (addBase, noDots, only,
+                                                    staticPolicy, (>->))
+
+import           System.Directory                  (getCurrentDirectory)
 
 runServer :: IO ()
-runServer = run 3000 (headers app)
+runServer = -- do
+  --dir <- getCurrentDirectory
+  --let staticPath = dir ++ "/static"
+  run 3000 . static2 . headers $ app
 
+-- for proxy servers
 headers :: Middleware
 headers = addHeaders [ ("X-Accel-Buffering", "no")
                      , ("Cache-Control", "no-cache")
                      ]
 
+-- add static path handler
+static :: Middleware
+static = staticPolicy $ noDots >-> addBase "static"
+
+static2 :: Middleware
+static2 = staticPolicy (only [("display.js", "static/display.js"), ("index.html", "static/index.html")])
+
+
+
 app :: Application
 app req res =
   case pathInfo req of
-    ["start"] -> eventSourceAppIO eventIO req res
-    _         -> res $ responseFile status200 [("Content-Type", "text/html")] "web/index.html" Nothing
+    ["start"] -> do
+      putStrLn "started"
+      eventSourceAppIO eventIO req res
+    _         ->
+      res $ responseLBS status404 [("Content-Type", "text/html")] "Not Found"
+      --putStrLn "served"
+      --res $ responseFile status200 [("Content-Type", "text/html")] "./static/index.html" Nothing
 
 eventIO = do
   threadDelay 1000000
-  putStrLn "sending"
   return $ ServerEvent Nothing Nothing [string8 "test"]

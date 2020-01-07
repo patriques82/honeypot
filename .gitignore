@@ -3,3 +3,4 @@ honeypot.cabal
 *~
 stack.yaml.lock
 tags
+static/node_modules

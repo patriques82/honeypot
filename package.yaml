@@ -32,8 +32,10 @@ library:
   - scotty
   - wai
   - wai-extra
+  - wai-middleware-static
   - warp
   - http-types
+  - directory
   default-extensions:
   - NoImplicitPrelude
 
