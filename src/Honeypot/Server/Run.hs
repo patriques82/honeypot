@@ -23,10 +23,7 @@ import           Network.Wai.Middleware.Static     (addBase, noDots, only,
 import           System.Directory                  (getCurrentDirectory)
 
 runServer :: IO ()
-runServer = -- do
-  --dir <- getCurrentDirectory
-  --let staticPath = dir ++ "/static"
-  run 3000 . static2 . headers $ app
+runServer = run 3000 $ static (headers app)
 
 -- for proxy servers
 headers :: Middleware
@@ -36,23 +33,19 @@ headers = addHeaders [ ("X-Accel-Buffering", "no")
 
 -- add static path handler
 static :: Middleware
-static = staticPolicy $ noDots >-> addBase "static"
+static = staticPolicy $ noDots >-> addBase "web/dist"
 
-static2 :: Middleware
-static2 = staticPolicy (only [("display.js", "static/display.js"), ("index.html", "static/index.html")])
-
-
+--static :: Middleware
+--static = staticPolicy $ only [("main.js", "web/dist/main.js"), ("index.html", "web/index.html")]
 
 app :: Application
-app req res =
-  case pathInfo req of
-    ["start"] -> do
-      putStrLn "started"
-      eventSourceAppIO eventIO req res
-    _         ->
-      res $ responseLBS status404 [("Content-Type", "text/html")] "Not Found"
-      --putStrLn "served"
-      --res $ responseFile status200 [("Content-Type", "text/html")] "./static/index.html" Nothing
+app req res = do
+	print (pathInfo req)
+	case pathInfo req of
+		["start"] ->
+			eventSourceAppIO eventIO req res
+		_         ->
+			res $ responseLBS status404 [("Content-Type", "text/html")] "Not Found"
 
 eventIO = do
   threadDelay 1000000

@@ -2,9 +2,9 @@
   "name": "web",
   "version": "1.0.0",
   "description": "\"a simple client for honeypot\"",
-  "main": "display.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "webpack"
   },
   "author": "Patrik Nygren",
   "license": "ISC",
