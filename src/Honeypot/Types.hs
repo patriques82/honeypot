@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE Rank2Types                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
 
@@ -6,15 +7,25 @@ module Honeypot.Types where
 
 import           Control.Monad.Reader (MonadReader, Reader, ask, asks,
                                        runReader)
-import           Data.Matrix          (Matrix, ncols, nrows, safeGet, (!))
+import           Data.Aeson           (ToJSON, object, toJSON, (.=))
+import           Data.Matrix          (Matrix, ncols, nrows, safeGet, toLists,
+                                       (!))
+import           Data.Text            (Text)
+import           Data.Vector          (fromList)
+import           GHC.Generics         (Generic)
 import           Honeypot.Prelude
 import           Lens.Simple          (makeLenses)
+
+
 
 data Pos = P !Int !Int -- row, col, index starts at 1,1
   deriving Eq
 
 instance Show Pos where
   show (P y x) = "(" ++ show y ++ "," ++ show x ++ ")"
+
+instance ToJSON Pos where
+  toJSON (P r c) = toJSON [toJSON r, toJSON c]
 
 position :: (Int, Int) -> Pos
 position (x, y) = P y x
@@ -28,6 +39,12 @@ data Dir = West
          | East
          | South
          deriving (Eq, Show)
+
+instance ToJSON Dir where
+  toJSON West  = toJSON ("west" :: Text)
+  toJSON North = toJSON ("north" :: Text)
+  toJSON East  = toJSON ("north" :: Text)
+  toJSON South = toJSON ("south" :: Text)
 
 forward :: Dir -> Pos -> Pos
 forward West (P y x)  = P y (x-1)
@@ -53,13 +70,16 @@ left East  = North
 left North = West
 left South = East
 
-type Board = Matrix Bool
+newtype Board = Board { unBoard :: Matrix Bool }
+
+instance ToJSON Board where
+  toJSON (Board m) = toJSON (toLists m)
 
 getOccupied :: Board -> [Pos]
-getOccupied b = foldr (\(y,x) xs -> if occupied b (y,x) then P y x : xs else xs) [] ps
+getOccupied (Board b) = foldr (\(y,x) xs -> if occupied b (y,x) then P y x : xs else xs) [] ps
   where ps = [(y',x') | y' <- [1..(ncols b)] , x' <- [1..(nrows b)]]
 
-occupied :: Board -> (Int, Int) -> Bool
+occupied :: Matrix Bool -> (Int, Int) -> Bool
 occupied = (!)
 
 data Event = TurnLeft     -- 1 fuel
@@ -73,6 +93,9 @@ data Enemy = E { future  :: ![Pos]
                , current :: !Pos
                , past    :: ![Pos]
                } deriving (Eq, Show)
+
+instance ToJSON Enemy where
+  toJSON (E _ c _) = object [ "pos" .= c ]
 
 step :: Enemy -> Enemy
 step e@(E [] p [])   = e
@@ -93,8 +116,14 @@ data Player = Player { _dir  :: !Dir
                      , _fuel :: !Fuel
                      } deriving (Eq, Show)
 
-playerView :: Matrix a -> Player -> [Pos]
-playerView m (Player dir p _) = go (forward dir p)
+instance ToJSON Player where
+  toJSON (Player d p f) = object [ "dir" .= d
+                                 , "pos" .= p
+                                 , "fuel" .= f
+                                 ]
+
+playerView :: Board -> Player -> [Pos]
+playerView (Board m) (Player dir p _) = go (forward dir p)
   where go p = case m !? p of
                  Nothing -> []
                  Just _  -> p : go (forward dir p)
@@ -104,7 +133,17 @@ data Env = Env { _terrain :: !Board
                , _player  :: !Player
                }
 
+instance ToJSON Env where
+  toJSON (Env t e p) = object [ "terrain" .= t
+                              , "enemies" .= e
+                              , "player" .= p
+                              ]
+
 data Status = Lost | Won
+
+instance ToJSON Status where
+  toJSON Lost = toJSON ("you lost" :: Text)
+  toJSON Won  = toJSON ("you won" :: Text)
 
 data GameState = GameOver Status
                | Continue Env

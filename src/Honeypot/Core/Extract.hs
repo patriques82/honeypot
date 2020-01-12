@@ -35,7 +35,7 @@ instance Monad Extract where
 cell :: Extract Cell
 cell = Ext $ \p@(P y x) e ->
   let es = e ^. enemies
-      !ts = e ^. terrain
+      !ts = unBoard $ e ^. terrain
       enemy = const Enemy <$> find ((==) p . current) es
       block = bool Nothing (Just Block) (ts ! (y,x))
    in case ts !? p of

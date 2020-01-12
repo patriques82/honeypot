@@ -89,6 +89,6 @@ move :: (Dir -> Pos -> Pos) -> EventCalc ()
 move f = do
   env <- get
   let !pos' = f (env ^. player . dir) (env ^. player . pos)
-  case (env ^. terrain) !? pos' of
+  case unBoard (env ^. terrain) !? pos' of
     Nothing -> return ()
     _       -> put (env & player . pos .~ pos')

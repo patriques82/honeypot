@@ -21,21 +21,22 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+  - aeson
+  - binary
   - bytestring
-  - blaze-html
   - containers
-  - mtl
   - free
+  - gloss
+  - http-types
   - lens-simple
   - matrix
-  - gloss
-  - scotty
+  - mtl
+  - text
+  - vector
   - wai
   - wai-extra
   - wai-middleware-static
   - warp
-  - http-types
-  - directory
   default-extensions:
   - NoImplicitPrelude
 

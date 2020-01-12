@@ -1,5 +1,7 @@
 import App from './app.js';
 
-const app = new App();
+console.log("Server running");
 
-console.log(app.run());
+const app = new App();
+app.run();
+
