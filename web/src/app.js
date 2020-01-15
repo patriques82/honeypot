@@ -73,11 +73,29 @@ const draw = ({ enemies, player, terrain }) => {
 };
 
 class App {
-  constructor() {}
-
   run() {
-    console.log("Start running events");
-    console.log(two.type);
+    fetch("http://localhost:3000/init")
+      .then(data => {
+        return data.json();
+      })
+      .then(res => {
+        draw(res);
+        if (!window.EventSource)
+          alert("You're browser does not support EventSource needed for this page");
+
+        const eventSource = new EventSource("/start");
+
+        eventSource.addEventListener('data', (e) => {
+          const data = JSON.parse(e.data);
+          console.log(data);
+        });
+
+        eventSource.addEventListener("gameover", function(e) {
+          console.log("gameover");
+          eventSource.close();
+        });
+      });
+
 
     //if (!window.EventSource)
       //alert("You're browser does not support EventSource needed for this page");
@@ -91,31 +109,31 @@ class App {
       //console.log("gameover");
     //});
 
-    const data = {
-      enemies: [
-        [2,2],
-        [2,10]
-      ],
-      player: {
-        dir: "north",
-        fuel: 3,
-        pos: [3,3]
-      },
-      terrain: [
-        [true, false, true, false, false, false, false, false, false, false],
-        [false, false, false, false, false, false, false, false, false, false],
-        [false, false, false, false, false, false, false, false, false, false],
-        [false, false, false, false, false, false, false, false, false, false],
-        [false, false, false, false, false, false, false, false, false, false],
-        [false, false, false, true, false, false, false, false, false, false],
-        [false, false, true, true, false, false, false, false, false, false],
-        [false, false, false, true, false, false, false, false, false, false],
-        [false, false, false, false, false, false, false, false, false, false],
-        [false, false, false, false, false, false, false, false, false, false],
-      ]
-    };
+    //const data = {
+      //enemies: [
+        //[2,2],
+        //[2,10]
+      //],
+      //player: {
+        //dir: "north",
+        //fuel: 3,
+        //pos: [3,3]
+      //},
+      //terrain: [
+        //[true, false, true, false, false, false, false, false, false, false],
+        //[false, false, false, false, false, false, false, false, false, false],
+        //[false, false, false, false, false, false, false, false, false, false],
+        //[false, false, false, false, false, false, false, false, false, false],
+        //[false, false, false, false, false, false, false, false, false, false],
+        //[false, false, false, true, false, false, false, false, false, false],
+        //[false, false, true, true, false, false, false, false, false, false],
+        //[false, false, false, true, false, false, false, false, false, false],
+        //[false, false, false, false, false, false, false, false, false, false],
+        //[false, false, false, false, false, false, false, false, false, false],
+      //]
+    //};
     
-    draw(data);
+    //draw(data);
   }
 }
 

@@ -7,8 +7,10 @@ module Honeypot.Server.Run
 import           Control.Concurrent                (forkIO, threadDelay)
 import           Control.Concurrent.Chan           (Chan, newChan, readChan,
                                                     writeChan)
+import           Control.Monad                     (mapM_)
 import           Data.Binary.Builder               (Builder, fromLazyByteString,
                                                     putStringUtf8)
+import           Data.Text                         (unpack)
 import qualified Honeypot.Config.Config            as C
 import           Honeypot.Core.Api                 (exec)
 import           Honeypot.Prelude
@@ -36,10 +38,8 @@ runServer step conf =
 
 run :: GameState -> Step Event -> IO ()
 run state step = do
-  chan <- newChan
-  forkIO $ producer chan state step
   putStrLn "Running on 3000"
-  W.run 3000 . static . headers $ consumer chan
+  W.run 3000 . static . headers $ app state step
   where
     -- for proxy servers
     headers :: Middleware
@@ -73,11 +73,18 @@ producer chan state step = loop state
           threadDelay 1000000
           loop s'
 
-consumer :: Chan ServerEvent -> Application
-consumer chan req res =
+app :: GameState -> Step Event -> Application
+app (GameOver _) _ _ _ = undefined
+app state@(Continue env) step req res =
   case pathInfo req of
-    ["start"] ->
+    ["init"] -> do
+      putStrLn "init"
+      res $ responseLBS status200 [("Content-Type", "application/json")] (encode env)
+    ["start"] -> do
+      putStrLn "start"
+      chan <- newChan
+      forkIO $ producer chan state step
       eventSourceAppChan chan req res
     _         ->
-      res $ responseLBS status404 [("Content-Type", "text/html")] "Not Found"
+      res $ responseFile status200 [("Content-Type", "text/html")] "web/dist/index.html" Nothing
 
