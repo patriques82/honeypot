@@ -20,31 +20,27 @@ const background = () => {
 };
 
 const grid = (rows, cols, cellWidth, cellHeight) => {
-  const verticals = [];
-  const horisontals = [];
+  //const verticals = [];
+  //const horisontals = [];
   for(let i=0; i<rows; i++) {
     const y = startY + i * cellHeight;
     const row = two.makeLine(startX, y, startX + displayWidth, y);
     row.linewidth = 3;
     row.stroke = 'rgb(44, 180, 9)';
-    horisontals.push(row);
+    //horisontals.push(row);
   }
   for(let j=0; j<cols; j++) {
     const x = startX + j * cellWidth;
     const col = two.makeLine(x, startY, x, startY + displayHeight);
     col.linewidth = 3;
     col.stroke = 'rgb(255, 255, 9)';
-    verticals.push(col);
+    //verticals.push(col);
   }
-  const rowLines = two.makeGroup(verticals);
-  const colLines = two.makeGroup(horisontals);
-  two.makeGroup(rowLines, colLines);
+  //const rowLines = two.makeGroup(verticals);
+  //const colLines = two.makeGroup(horisontals);
 };
 
-const blocks = (terrain, cellHeight, cellWidth) => {
-  const xOffset = cellWidth/2;
-  const yOffset = cellHeight/2;
-  const solids = [];
+const drawBlocks = (terrain, cellHeight, cellWidth, xOffset, yOffset) => {
   for(let row=0; row<terrain.length; row++) {
     for(let col=0; col<terrain[row].length; col++) {
       const isBlock = terrain[row][col];
@@ -58,7 +54,25 @@ const blocks = (terrain, cellHeight, cellWidth) => {
       }
     }
   }
-  two.makeGroup(solids);
+};
+
+const entity = (col, row, cellHeight, cellWidth, xOffset, yOffset) => {
+  const x = startX + col * cellWidth + xOffset;
+  const y = startY + row * cellHeight + yOffset;
+  const display = two.makeRectangle(x, y, cellWidth, cellHeight);
+  display.fill = 'rgb(150, 10, 100)';
+  display.opacity = 0.75;
+  display.noStroke();
+}
+
+const drawPlayer = ({ dir, fuel, pos }, cellHeight, cellWidth, xOffset, yOffset) => {
+  entity(pos[1]-1, pos[0]-1, cellHeight, cellWidth, xOffset, yOffset);
+};
+
+const drawEnemies = (enemies, cellHeight, cellWidth, xOffset, yOffset) => {
+  enemies.forEach(enemy => {
+    entity(enemy.pos[1]-1, enemy.pos[0]-1, cellHeight, cellWidth, xOffset, yOffset);
+  });
 };
 
 const draw = ({ enemies, player, terrain }) => {
@@ -66,9 +80,14 @@ const draw = ({ enemies, player, terrain }) => {
   const cols = terrain[0].length;
   const cellWidth = displayWidth/cols;
   const cellHeight = displayHeight/rows;
+  const xOffset = cellWidth/2;
+  const yOffset = cellHeight/2;
   background();
   grid(rows, cols, cellWidth, cellHeight);
-  blocks(terrain, cellHeight, cellWidth); 
+  drawBlocks(terrain, cellHeight, cellWidth, xOffset, yOffset); 
+  drawPlayer(player, cellHeight, cellWidth, xOffset, yOffset);
+  //console.log(enemies);
+  drawEnemies(enemies, cellHeight, cellWidth, xOffset, yOffset);
   two.update();
 };
 
@@ -79,7 +98,6 @@ class App {
         return data.json();
       })
       .then(res => {
-        draw(res);
         if (!window.EventSource)
           alert("You're browser does not support EventSource needed for this page");
 
@@ -87,7 +105,7 @@ class App {
 
         eventSource.addEventListener('data', (e) => {
           const data = JSON.parse(e.data);
-          console.log(data);
+          draw(data);
         });
 
         eventSource.addEventListener("gameover", function(e) {
@@ -95,19 +113,6 @@ class App {
           eventSource.close();
         });
       });
-
-
-    //if (!window.EventSource)
-      //alert("You're browser does not support EventSource needed for this page");
-
-    //const eventSource = new EventSource("/start");
-
-    //eventSource.addEventListener('data', draw);
-    //const data = JSON.parse(e.data);
-
-    //eventSource.addEventListener("gameover", function(e) {
-      //console.log("gameover");
-    //});
 
     //const data = {
       //enemies: [

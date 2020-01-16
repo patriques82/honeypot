@@ -77,6 +77,8 @@ app :: GameState -> Step Event -> Application
 app (GameOver _) _ _ _ = undefined
 app state@(Continue env) step req res =
   case pathInfo req of
+    []         ->
+      res $ responseFile status200 [("Content-Type", "text/html")] "web/dist/index.html" Nothing
     ["init"] -> do
       putStrLn "init"
       res $ responseLBS status200 [("Content-Type", "application/json")] (encode env)
@@ -86,5 +88,5 @@ app state@(Continue env) step req res =
       forkIO $ producer chan state step
       eventSourceAppChan chan req res
     _         ->
-      res $ responseFile status200 [("Content-Type", "text/html")] "web/dist/index.html" Nothing
+      res $ responseLBS status404 [("Content-Type", "text/html")] "Not Found"
 
