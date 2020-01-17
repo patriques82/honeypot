@@ -20,24 +20,18 @@ const background = () => {
 };
 
 const grid = (rows, cols, cellWidth, cellHeight) => {
-  //const verticals = [];
-  //const horisontals = [];
   for(let i=0; i<rows; i++) {
     const y = startY + i * cellHeight;
     const row = two.makeLine(startX, y, startX + displayWidth, y);
     row.linewidth = 3;
     row.stroke = 'rgb(44, 180, 9)';
-    //horisontals.push(row);
   }
   for(let j=0; j<cols; j++) {
     const x = startX + j * cellWidth;
     const col = two.makeLine(x, startY, x, startY + displayHeight);
     col.linewidth = 3;
     col.stroke = 'rgb(255, 255, 9)';
-    //verticals.push(col);
   }
-  //const rowLines = two.makeGroup(verticals);
-  //const colLines = two.makeGroup(horisontals);
 };
 
 const drawBlocks = (terrain, cellHeight, cellWidth, xOffset, yOffset) => {
@@ -92,27 +86,44 @@ const draw = ({ enemies, player, terrain }) => {
 };
 
 class App {
-  run() {
-    fetch("http://localhost:3000/init")
-      .then(data => {
-        return data.json();
-      })
-      .then(res => {
-        if (!window.EventSource)
-          alert("You're browser does not support EventSource needed for this page");
+  async run() {
+    const data = await fetch("http://localhost:3000/init")
+    const json = data.json();
 
-        const eventSource = new EventSource("/start");
+    if (!window.EventSource)
+      alert("You're browser does not support EventSource needed for this page");
 
-        eventSource.addEventListener('data', (e) => {
-          const data = JSON.parse(e.data);
-          draw(data);
-        });
+    const eventSource = new EventSource("/start");
+    eventSource.addEventListener('data', (e) => {
+      const data = JSON.parse(e.data);
+      draw(data);
+    });
 
-        eventSource.addEventListener("gameover", function(e) {
-          console.log("gameover");
-          eventSource.close();
-        });
-      });
+    eventSource.addEventListener("gameover", (e) => {
+      console.log("gameover");
+      eventSource.close();
+    });
+
+    //fetch("http://localhost:3000/init")
+      //.then(data => {
+        //return data.json();
+      //})
+      //.then(res => {
+        //if (!window.EventSource)
+          //alert("You're browser does not support EventSource needed for this page");
+
+        //const eventSource = new EventSource("/start");
+
+        //eventSource.addEventListener('data', (e) => {
+          //const data = JSON.parse(e.data);
+          //draw(data);
+        //});
+
+        //eventSource.addEventListener("gameover", function(e) {
+          //console.log("gameover");
+          //eventSource.close();
+        //});
+      //});
 
     //const data = {
       //enemies: [
