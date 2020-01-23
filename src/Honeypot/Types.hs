@@ -122,8 +122,8 @@ instance ToJSON Player where
                                  , "fuel" .= f
                                  ]
 
-playerView :: Board -> Player -> [Pos]
-playerView (Board m) (Player dir p _) = go (forward dir p)
+playerView :: Matrix a -> Player -> [Pos]
+playerView m (Player dir p _) = go (forward dir p)
   where go p = case m !? p of
                  Nothing -> []
                  Just _  -> p : go (forward dir p)

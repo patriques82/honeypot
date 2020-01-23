@@ -26,7 +26,6 @@ library:
   - bytestring
   - containers
   - free
-  - gloss
   - http-types
   - lens-simple
   - matrix
@@ -41,19 +40,9 @@ library:
   - NoImplicitPrelude
 
 executables:
-  grahics-exe:
-    main:                GraphicsRunner.hs
-    source-dirs:         apps
-    ghc-options:
-    - -O2
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - honeypot
   server-exe:
-    main:                ServerRunner.hs
-    source-dirs:         apps
+    main:                Main.hs
+    source-dirs:         app
     ghc-options:
     - -O2
     - -threaded

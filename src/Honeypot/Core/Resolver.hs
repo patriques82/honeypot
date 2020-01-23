@@ -70,7 +70,7 @@ shoot = do
 removeEnemies :: EventCalc ()
 removeEnemies = do
   env@(Env terrain enemies' player) <- get
-  let !view = playerView terrain player
+  let !view = playerView (unBoard terrain) player
       pred e = current e `elem` view
   put (env & enemies .~ filter pred enemies')
 

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Honeypot.Server.Run
+module Honeypot.Server
   ( runServer
   ) where
 

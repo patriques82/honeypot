@@ -1,8 +1,7 @@
 module Honeypot
   ( module Honeypot.Core.Api
   , module Honeypot.Config.Config
-  , module Honeypot.Graphics.Run
-  , module Honeypot.Server.Run
+  , module Honeypot.Server
   , Board
   , Dir (..)
   , Enemy (..)
@@ -17,6 +16,5 @@ module Honeypot
 
 import           Honeypot.Config.Config
 import           Honeypot.Core.Api
-import           Honeypot.Graphics.Run
-import           Honeypot.Server.Run
+import           Honeypot.Server
 import           Honeypot.Types

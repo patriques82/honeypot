@@ -41,9 +41,9 @@ typesProperties = testGroup "TypeProperties"
 
 singlePosEnemy = E [] (P 0 0) []
 
-firstStep = E [(P 1 1)] (P 0 0) []
+firstStep = E [P 1 1] (P 0 0) []
 
-secondStep = E [] (P 1 1) [(P 0 0)]
+secondStep = E [] (P 1 1) [P 0 0]
 
 stepTests :: TestTree
 stepTests = testGroup "stepTests"
@@ -55,17 +55,15 @@ stepTests = testGroup "stepTests"
 
 stepProperties :: TestTree
 stepProperties = testGroup "stepProperties"
-  [ testProperty "after some steps enemy reaches initial state" $
-    stepProperty
+  [ testProperty "after some steps enemy reaches initial state" stepProperty
   ]
 
 stepProperty :: Enemy -> Bool
-stepProperty enemy = any (== enemy) $ drop 1 (iterate step enemy)
+stepProperty enemy = elem enemy $ drop 1 (iterate step enemy)
 
 playerViewProperties :: TestTree
 playerViewProperties = testGroup "playerViewProperties"
-  [ testProperty "size of playerSteps equals player distance from matrix edge" $
-    playerViewProperty
+  [ testProperty "size of playerSteps equals player distance from matrix edge" playerViewProperty
   ]
 
 playerViewProperty :: Matrix a -> Player -> Property

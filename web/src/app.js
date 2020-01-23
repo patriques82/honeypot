@@ -1,18 +1,13 @@
 import Two from 'two.js';
     
 const elem = document.getElementById('root');
-const two = new Two({ fullscreen: true }).appendTo(elem);
+const two = new Two({ 
+  fullscreen: true,
+  types: Two.Types.svg
+}).appendTo(elem);
 
-const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-const displayWidth = width * 0.7;
-const displayHeight = height * 0.8;
-const centerX = width * 0.5;
-const centerY = height * 0.5;
-const startX = centerX - displayWidth/2;
-const startY = centerY - displayHeight/2;
 
-const background = () => {
+const background = (centerX, centerY, displayWidth, displayHeight) => {
   const display = two.makeRectangle(centerX, centerY, displayWidth, displayHeight);
   display.fill = 'rgb(0, 200, 255)';
   display.opacity = 0.75;
@@ -20,6 +15,7 @@ const background = () => {
 };
 
 const grid = (rows, cols, cellWidth, cellHeight) => {
+  background();
   for(let i=0; i<rows; i++) {
     const y = startY + i * cellHeight;
     const row = two.makeLine(startX, y, startX + displayWidth, y);
@@ -70,14 +66,26 @@ const drawEnemies = (enemies, cellHeight, cellWidth, xOffset, yOffset) => {
 };
 
 const draw = ({ enemies, player, terrain }) => {
+  const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+  const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+
+  const displayWidth = width * 0.7;
+  const displayHeight = height * 0.8;
+  const centerX = width * 0.5;
+  const centerY = height * 0.5;
+  const startX = centerX - displayWidth/2;
+  const startY = centerY - displayHeight/2;
+
   const rows = terrain.length;
   const cols = terrain[0].length;
   const cellWidth = displayWidth/cols;
   const cellHeight = displayHeight/rows;
   const xOffset = cellWidth/2;
   const yOffset = cellHeight/2;
-  background();
+
+  background(centerX, centerY, displayWidth, displayHeight);
   grid(rows, cols, cellWidth, cellHeight);
+
   drawBlocks(terrain, cellHeight, cellWidth, xOffset, yOffset); 
   drawPlayer(player, cellHeight, cellWidth, xOffset, yOffset);
   //console.log(enemies);
@@ -103,27 +111,6 @@ class App {
       console.log("gameover");
       eventSource.close();
     });
-
-    //fetch("http://localhost:3000/init")
-      //.then(data => {
-        //return data.json();
-      //})
-      //.then(res => {
-        //if (!window.EventSource)
-          //alert("You're browser does not support EventSource needed for this page");
-
-        //const eventSource = new EventSource("/start");
-
-        //eventSource.addEventListener('data', (e) => {
-          //const data = JSON.parse(e.data);
-          //draw(data);
-        //});
-
-        //eventSource.addEventListener("gameover", function(e) {
-          //console.log("gameover");
-          //eventSource.close();
-        //});
-      //});
 
     //const data = {
       //enemies: [
