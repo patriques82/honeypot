@@ -15,10 +15,10 @@ import           Honeypot.Types
 import           Lens.Simple            ((&), (.~), (^.))
 
 exec :: GameState -> Step Event -> GameState
-exec st@(GameOver _) _   = st
+exec st@(GameOver _ _) _   = st
 exec (Continue env) step =
   case env |~ step of
-    Left status -> GameOver status
+    Left status -> GameOver env status
     Right env'  -> Continue env'
 
 (|~) :: Env -> Step Event -> Either Status Env

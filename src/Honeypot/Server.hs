@@ -63,9 +63,9 @@ producer chan state step = loop state
   where
     loop s =
       case exec s step of
-        GameOver status -> do
+        GameOver env _ -> do
           putStrLn "Game over"
-          writeChan chan $ gameEvent status "gameover"
+          writeChan chan $ gameEvent env "gameover"
           writeChan chan CloseEvent
         s'@(Continue env) -> do
           putStrLn "Sending state"
@@ -74,14 +74,13 @@ producer chan state step = loop state
           loop s'
 
 app :: GameState -> Step Event -> Application
-app (GameOver _) _ _ _ = undefined
-app state@(Continue env) step req res =
+app state step req res =
   case pathInfo req of
     []         ->
       res $ responseFile status200 [("Content-Type", "text/html")] "web/dist/index.html" Nothing
     ["init"] -> do
       putStrLn "init"
-      res $ responseLBS status200 [("Content-Type", "application/json")] (encode env)
+      res $ responseLBS status200 [("Content-Type", "application/json")] (encode $ getEnv state)
     ["start"] -> do
       putStrLn "start"
       chan <- newChan

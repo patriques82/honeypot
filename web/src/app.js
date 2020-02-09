@@ -1,11 +1,21 @@
 import Two from 'two.js';
     
 const elem = document.getElementById('root');
+const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+
+const displayWidth = width * 0.6;
+const displayHeight = height * 0.8;
+
 const two = new Two({ 
   fullscreen: true,
   types: Two.Types.svg
 }).appendTo(elem);
 
+const centerX = width * 0.5;
+const centerY = height * 0.5;
+const startX = centerX - displayWidth/2;
+const startY = centerY - displayHeight/2;
 
 const background = (centerX, centerY, displayWidth, displayHeight) => {
   const display = two.makeRectangle(centerX, centerY, displayWidth, displayHeight);
@@ -46,52 +56,76 @@ const drawBlocks = (terrain, cellHeight, cellWidth, xOffset, yOffset) => {
   }
 };
 
-const entity = (col, row, cellHeight, cellWidth, xOffset, yOffset) => {
-  const x = startX + col * cellWidth + xOffset;
-  const y = startY + row * cellHeight + yOffset;
+const entity = (x, y, cellHeight, cellWidth, imgPath, dir) => {
   const display = two.makeRectangle(x, y, cellWidth, cellHeight);
   display.fill = 'rgb(150, 10, 100)';
   display.opacity = 0.75;
   display.noStroke();
+  const sprite = two.makeSprite(imgPath, x, y);
+  sprite.scale = sprite.height/cellHeight;
+  return sprite;
 }
 
 const drawPlayer = ({ dir, fuel, pos }, cellHeight, cellWidth, xOffset, yOffset) => {
-  entity(pos[1]-1, pos[0]-1, cellHeight, cellWidth, xOffset, yOffset);
+  const col = pos[1]-1;
+  const row = pos[0]-1;
+  const x = startX + col * cellWidth + xOffset;
+  const y = startY + row * cellHeight + yOffset;
+  const player = entity(x, y, cellHeight, cellWidth, 'tank.png', dir);
+  console.log(dir, fuel, pos);
+  switch(dir) {
+    case "south":
+      player.rotation += Math.PI;
+      break;
+    case "east":
+      player.rotation -= Math.PI/2;
+      break;
+    case "west":
+      player.rotation += Math.PI/2;
+      break;
+    default:
+      break;
+  }
 };
 
 const drawEnemies = (enemies, cellHeight, cellWidth, xOffset, yOffset) => {
-  enemies.forEach(enemy => {
-    entity(enemy.pos[1]-1, enemy.pos[0]-1, cellHeight, cellWidth, xOffset, yOffset);
+  enemies.forEach(({ pos }) => {
+    const col = pos[1]-1;
+    const row = pos[0]-1;
+    const x = startX + col * cellWidth + xOffset;
+    const y = startY + row * cellHeight + yOffset;
+    entity(x, y, cellHeight, cellWidth, 'enemy2.png', null);
   });
 };
 
 const draw = ({ enemies, player, terrain }) => {
-  const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-  const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-
-  const displayWidth = width * 0.7;
-  const displayHeight = height * 0.8;
-  const centerX = width * 0.5;
-  const centerY = height * 0.5;
-  const startX = centerX - displayWidth/2;
-  const startY = centerY - displayHeight/2;
-
   const rows = terrain.length;
   const cols = terrain[0].length;
   const cellWidth = displayWidth/cols;
   const cellHeight = displayHeight/rows;
   const xOffset = cellWidth/2;
   const yOffset = cellHeight/2;
-
   background(centerX, centerY, displayWidth, displayHeight);
   grid(rows, cols, cellWidth, cellHeight);
 
   drawBlocks(terrain, cellHeight, cellWidth, xOffset, yOffset); 
   drawPlayer(player, cellHeight, cellWidth, xOffset, yOffset);
-  //console.log(enemies);
   drawEnemies(enemies, cellHeight, cellWidth, xOffset, yOffset);
-  two.update();
 };
+
+const gameOver = (data) => {
+  draw(data);
+  const text = two.makeText("Game Over", centerX, centerY);
+  text.size = 30;
+  text.linewidth = 2;
+  text.visible = true;
+}
+
+const test = () => {
+  const texture = new Two.Texture('tank.png');
+  grid(rows, cols, cellWidth, cellHeight);
+  
+}
 
 class App {
   async run() {
@@ -99,44 +133,23 @@ class App {
     const json = data.json();
 
     if (!window.EventSource)
-      alert("You're browser does not support EventSource needed for this page");
+      alert("You're browser does not support EventSource");
 
     const eventSource = new EventSource("/start");
     eventSource.addEventListener('data', (e) => {
+      two.clear();
       const data = JSON.parse(e.data);
       draw(data);
+      two.update();
     });
 
     eventSource.addEventListener("gameover", (e) => {
-      console.log("gameover");
       eventSource.close();
+      two.clear();
+      const data = JSON.parse(e.data);
+      gameOver(data);
+      two.update();
     });
-
-    //const data = {
-      //enemies: [
-        //[2,2],
-        //[2,10]
-      //],
-      //player: {
-        //dir: "north",
-        //fuel: 3,
-        //pos: [3,3]
-      //},
-      //terrain: [
-        //[true, false, true, false, false, false, false, false, false, false],
-        //[false, false, false, false, false, false, false, false, false, false],
-        //[false, false, false, false, false, false, false, false, false, false],
-        //[false, false, false, false, false, false, false, false, false, false],
-        //[false, false, false, false, false, false, false, false, false, false],
-        //[false, false, false, true, false, false, false, false, false, false],
-        //[false, false, true, true, false, false, false, false, false, false],
-        //[false, false, false, true, false, false, false, false, false, false],
-        //[false, false, false, false, false, false, false, false, false, false],
-        //[false, false, false, false, false, false, false, false, false, false],
-      //]
-    //};
-    
-    //draw(data);
   }
 }
 

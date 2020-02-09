@@ -43,7 +43,7 @@ data Dir = West
 instance ToJSON Dir where
   toJSON West  = toJSON ("west" :: Text)
   toJSON North = toJSON ("north" :: Text)
-  toJSON East  = toJSON ("north" :: Text)
+  toJSON East  = toJSON ("east" :: Text)
   toJSON South = toJSON ("south" :: Text)
 
 forward :: Dir -> Pos -> Pos
@@ -145,8 +145,12 @@ instance ToJSON Status where
   toJSON Lost = toJSON ("you lost" :: Text)
   toJSON Won  = toJSON ("you won" :: Text)
 
-data GameState = GameOver Status
+data GameState = GameOver Env Status
                | Continue Env
+
+getEnv :: GameState -> Env
+getEnv (GameOver e _) = e
+getEnv (Continue e)   = e
 
 (!?) :: Matrix a -> Pos -> Maybe a
 m !? (P y x) = safeGet y x m
