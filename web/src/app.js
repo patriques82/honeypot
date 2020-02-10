@@ -1,12 +1,15 @@
 import Two from 'two.js';
+import rock from './images/rock.jpeg';
+import grass from './images/grass.jpeg';
+import drone from './images/drone.png';
+import tank from './images/tank.png';
     
-const elem = document.getElementById('root');
 const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
 const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-
 const displayWidth = width * 0.6;
 const displayHeight = height * 0.8;
 
+const elem = document.getElementById('root');
 const two = new Two({ 
   fullscreen: true,
   types: Two.Types.svg
@@ -17,84 +20,83 @@ const centerY = height * 0.5;
 const startX = centerX - displayWidth/2;
 const startY = centerY - displayHeight/2;
 
-const background = (centerX, centerY, displayWidth, displayHeight) => {
-  const display = two.makeRectangle(centerX, centerY, displayWidth, displayHeight);
-  display.fill = 'rgb(0, 200, 255)';
-  display.opacity = 0.75;
-  display.noStroke();
-};
-
 const grid = (rows, cols, cellWidth, cellHeight) => {
-  background();
-  for(let i=0; i<rows; i++) {
+  for(let i=0; i<=rows; i++) {
     const y = startY + i * cellHeight;
     const row = two.makeLine(startX, y, startX + displayWidth, y);
-    row.linewidth = 3;
-    row.stroke = 'rgb(44, 180, 9)';
+    row.linewidth = 1;
+    row.opacity = 0.1;
+    row.stroke = 'rgb(30, 30, 30)';
   }
-  for(let j=0; j<cols; j++) {
+  for(let j=0; j<=cols; j++) {
     const x = startX + j * cellWidth;
     const col = two.makeLine(x, startY, x, startY + displayHeight);
-    col.linewidth = 3;
-    col.stroke = 'rgb(255, 255, 9)';
+    col.linewidth = 1;
+    col.opacity = 0.1;
+    col.stroke = 'rgb(30, 30, 30)';
   }
 };
 
 const drawBlocks = (terrain, cellHeight, cellWidth, xOffset, yOffset) => {
   for(let row=0; row<terrain.length; row++) {
     for(let col=0; col<terrain[row].length; col++) {
+      const x = startX + col * cellWidth + xOffset;
+      const y = startY + row * cellHeight + yOffset;
+      const display = two.makeRectangle(x, y, cellWidth, cellHeight);
       const isBlock = terrain[row][col];
       if (isBlock) {
-        const x = startX + col * cellWidth + xOffset;
-        const y = startY + row * cellHeight + yOffset;
-        const display = two.makeRectangle(x, y, cellWidth, cellHeight);
-        display.fill = 'rgb(200, 30, 10)';
-        display.opacity = 0.75;
-        display.noStroke();
+        display.fill = two.makeTexture(rock);
+      } else {
+        display.fill = two.makeTexture(grass);
       }
+      display.opacity = 0.75;
+      display.noStroke();
     }
   }
 };
 
-const entity = (x, y, cellHeight, cellWidth, imgPath, dir) => {
-  const display = two.makeRectangle(x, y, cellWidth, cellHeight);
-  display.fill = 'rgb(150, 10, 100)';
-  display.opacity = 0.75;
-  display.noStroke();
-  const sprite = two.makeSprite(imgPath, x, y);
-  sprite.scale = sprite.height/cellHeight;
-  return sprite;
+const drawStats = (fuel) => {
+  const marginHeight = height - displayHeight;
+  const y = marginHeight/4;
+  const text = two.makeText("Fuel: " + fuel, centerX, y);
+  if (fuel < 10) {
+    text.stroke = 'rgb(200, 30, 30)';
+  }
+  text.size = 30;
+  text.linewidth = 2;
+  text.visible = true;
 }
 
-const drawPlayer = ({ dir, fuel, pos }, cellHeight, cellWidth, xOffset, yOffset) => {
+const drawEntity = (pos, dir, imgPath, cellHeight, cellWidth, xOffset, yOffset) => {
   const col = pos[1]-1;
   const row = pos[0]-1;
   const x = startX + col * cellWidth + xOffset;
   const y = startY + row * cellHeight + yOffset;
-  const player = entity(x, y, cellHeight, cellWidth, 'tank.png', dir);
-  console.log(dir, fuel, pos);
+  const sprite = two.makeSprite(imgPath, x, y);
+  sprite.scale = cellHeight/sprite.height;
   switch(dir) {
     case "south":
-      player.rotation += Math.PI;
+      sprite.rotation += Math.PI;
       break;
     case "east":
-      player.rotation -= Math.PI/2;
+      sprite.rotation -= Math.PI/2;
       break;
     case "west":
-      player.rotation += Math.PI/2;
+      sprite.rotation += Math.PI/2;
       break;
     default:
       break;
   }
+}
+
+const drawPlayer = ({ dir, fuel, pos }, cellHeight, cellWidth, xOffset, yOffset) => {
+  drawEntity(pos, dir, tank, cellHeight, cellWidth, xOffset, yOffset);
+  drawStats(fuel);
 };
 
 const drawEnemies = (enemies, cellHeight, cellWidth, xOffset, yOffset) => {
-  enemies.forEach(({ pos }) => {
-    const col = pos[1]-1;
-    const row = pos[0]-1;
-    const x = startX + col * cellWidth + xOffset;
-    const y = startY + row * cellHeight + yOffset;
-    entity(x, y, cellHeight, cellWidth, 'enemy2.png', null);
+  enemies.forEach(({ dir, pos }) => {
+    drawEntity(pos, dir, drone, cellHeight, cellWidth, xOffset, yOffset);
   });
 };
 
@@ -105,32 +107,29 @@ const draw = ({ enemies, player, terrain }) => {
   const cellHeight = displayHeight/rows;
   const xOffset = cellWidth/2;
   const yOffset = cellHeight/2;
-  background(centerX, centerY, displayWidth, displayHeight);
-  grid(rows, cols, cellWidth, cellHeight);
-
+  //grid(rows, cols, cellWidth, cellHeight);
   drawBlocks(terrain, cellHeight, cellWidth, xOffset, yOffset); 
   drawPlayer(player, cellHeight, cellWidth, xOffset, yOffset);
   drawEnemies(enemies, cellHeight, cellWidth, xOffset, yOffset);
 };
 
-const gameOver = (data) => {
-  draw(data);
+const gameOver = (status) => {
   const text = two.makeText("Game Over", centerX, centerY);
-  text.size = 30;
-  text.linewidth = 2;
+  text.size = 50;
+  text.linewidth = 3;
   text.visible = true;
-}
-
-const test = () => {
-  const texture = new Two.Texture('tank.png');
-  grid(rows, cols, cellWidth, cellHeight);
-  
+  const subtext = two.makeText(status, centerX, centerY + 40);
+  subtext.size = 30;
+  subtext.linewidth = 3;
+  subtext.visible = true;
 }
 
 class App {
   async run() {
-    const data = await fetch("http://localhost:3000/init")
-    const json = data.json();
+    const resp = await fetch("http://localhost:3000/init")
+    const data = await resp.json();
+    draw(data);
+    two.update();
 
     if (!window.EventSource)
       alert("You're browser does not support EventSource");
@@ -139,7 +138,8 @@ class App {
     eventSource.addEventListener('data', (e) => {
       two.clear();
       const data = JSON.parse(e.data);
-      draw(data);
+      console.log(data);
+      draw(data.env);
       two.update();
     });
 
@@ -147,7 +147,9 @@ class App {
       eventSource.close();
       two.clear();
       const data = JSON.parse(e.data);
-      gameOver(data);
+      console.log(data);
+      draw(data.env);
+      gameOver(data.status);
       two.update();
     });
   }
