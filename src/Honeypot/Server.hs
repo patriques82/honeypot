@@ -55,23 +55,23 @@ type EventName = String
 gameEvent :: ToJSON a => a -> EventName -> ServerEvent
 gameEvent x name =
   let payload = [fromLazyByteString (encode x)]
-      tag = Just . putStringUtf8
-   in ServerEvent (tag name) Nothing payload
+      tag = Just $ putStringUtf8 name
+   in ServerEvent tag Nothing payload
 
 producer :: Chan ServerEvent -> GameState -> Step Event -> IO ()
 producer chan state step = loop state
   where
     loop s =
       case exec s step of
-        GameOver env _ -> do
+        s'@(GameOver _ _) -> do
           putStrLn "Game over"
-          writeChan chan $ gameEvent env "gameover"
+          writeChan chan $ gameEvent s' "gameover"
           writeChan chan CloseEvent
-        s'@(Continue env) -> do
+        s -> do
           putStrLn "Sending state"
-          writeChan chan $ gameEvent env "data"
+          writeChan chan $ gameEvent s "data"
           threadDelay 1000000
-          loop s'
+          loop s
 
 app :: GameState -> Step Event -> Application
 app state step req res =

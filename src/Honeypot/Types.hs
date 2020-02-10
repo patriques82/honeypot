@@ -95,10 +95,25 @@ data Enemy = E { future  :: ![Pos]
                } deriving (Eq, Show)
 
 instance ToJSON Enemy where
-  toJSON (E _ c _) = object [ "pos" .= c ]
+  toJSON (E [] c []) = object [ "pos" .= c
+                              , "dir" .= North
+                              ]
+  toJSON (E _ c (x:_)) = object [ "pos" .= c
+                                , "dir" .= from x c
+                                ]
+  toJSON (E (x:_) c []) = object [ "pos" .= c
+                                 , "dir" .= from c x
+                                 ]
+
+from :: Pos -> Pos -> Dir
+from (P y1 x1) (P y2 x2)
+  | x1 > x2 = East
+  | x1 < x2 = West
+  | y1 < y2 = South
+  | otherwise = North
 
 step :: Enemy -> Enemy
-step e@(E [] p [])   = e
+step e@(E [] _ [])   = e
 step (E [] p (y:ys)) = E ys y [p]
 step (E (x:xs) p ys) = E xs x (p:ys)
 
@@ -147,6 +162,12 @@ instance ToJSON Status where
 
 data GameState = GameOver Env Status
                | Continue Env
+
+instance ToJSON GameState where
+  toJSON (Continue e)   = object [ "env" .= e ]
+  toJSON (GameOver e s) = object [ "env" .= e
+                                 , "status" .= s
+                                 ]
 
 getEnv :: GameState -> Env
 getEnv (GameOver e _) = e

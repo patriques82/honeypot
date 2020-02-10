@@ -9,7 +9,6 @@ copyright:           "2019 Patrik Nygren"
 extra-source-files:
 - README.md
 - ChangeLog.md
-- data/*.bmp
 
 synopsis:            Honeypot challange clone
 
